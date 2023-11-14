@@ -1,0 +1,88 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bluetooth-mesh-bluez"
+version = "0.9"
+readme = "README.rst"
+authors = [
+    { name = "Michał Lowas-Rzechonek", email = "michal.lowas-rzechonek@silvair.com" },
+    { name = "Amadeusz Herzog", email = "amadeusz.hercog@silvair.com" },
+    { name = "Jakub Witowski", email = "jakub.witowski@silvair.com" },
+    { name = "Kamil Janowski", email = "kamil.janowski@silvair.com" },
+    { name = "Przemysław Fierek", email = "przemyslaw.fierek@silvair.com" },
+    { name = "Rafał Gajda", email = "rafal.gajda@silvair.com" }
+]
+dependencies = [
+    "bluetooth-mesh-messages>=0.9",
+    "bluetooth-mesh-network>=0.9",
+    "dbus-next>=0.2.1",
+    "pluggy>=0.13.1",
+    "marshmallow>=3.0.1,<4.0",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: System :: Networking",
+]
+
+[project.entry-points.console_scripts]
+meshcli = "bluetooth_mesh.bluez.apps.meshcli:main [tools]"
+
+[project.entry-points.bluetooth_mesh]
+bluetooth_mesh = "bluetooth_mesh.bluez.apps.mixins"
+
+[project.optional-dependencies]
+test = [
+    "asynctest",
+    "black",
+    "isort",
+    "pytest",
+    "pytest-asyncio",
+    "ruff",
+]
+cli = [
+    "prompt-toolkit==2.0.10",
+]
+
+[tool.black]
+line-length = 110
+target-version = ["py310"]
+exclude = '''
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.mypy_cache
+    | _build
+    | build
+    | dist
+  )/
+)
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 110
+include_trailing_comma = true
+use_parentheses = true
+combine_as_imports = true
+known_first_party = ["bluetooth_mesh"]
+
+[tool.ruff]
+select = ["F", "W", "PLW", "I", "B", "RUF"]
+ignore = ["RUF012"]
+line-length = 110
+indent-width = 4
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]
+"tests/test_*.py" = ["F403", "F405"]
+
+[tool.ruff.isort]
+combine-as-imports = true
