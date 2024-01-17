@@ -467,7 +467,7 @@ class Model:
             - subscription address (usually a group address)
             - class object of the bound model
         """
-        from bluetooth_mesh.models.models import ModelSubscriptionStatus
+        from bluetooth_mesh.bluez.models import ModelSubscriptionStatus
 
         self.subscription_callbacks[subscription_address].add(callback)
 
@@ -497,7 +497,7 @@ class Model:
             - subscription address (usually a group address)
             - class object of the bound model
         """
-        from bluetooth_mesh.models.models import ModelSubscriptionStatus
+        from bluetooth_mesh.bluez.models import ModelSubscriptionStatus
 
         if subscription_address is None:
             self.subscription_callbacks.clear()

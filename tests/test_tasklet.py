@@ -7,7 +7,7 @@ from functools import partial
 
 import pytest
 
-from bluetooth_mesh.utils import tasklet
+from bluetooth_mesh.bluez.utils import tasklet
 
 
 @pytest.mark.asyncio

@@ -41,13 +41,13 @@ from prompt_toolkit.eventloop import use_asyncio_event_loop
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.patch_stdout import patch_stdout
 
-from bluetooth_mesh.application import Application, Element
-from bluetooth_mesh.apps import get_plugin_manager
-from bluetooth_mesh.crypto import DeviceKey, NetworkKey
+from bluetooth_mesh.bluez.application import Application, Element
+from bluetooth_mesh.bluez.apps import get_plugin_manager
+from bluetooth_mesh.network.crypto import DeviceKey, NetworkKey
 from bluetooth_mesh.messages.config import GATTNamespaceDescriptor, PublishPeriodStepResolution
 from bluetooth_mesh.messages.properties import PropertyID
 from bluetooth_mesh.messages.time import CURRENT_TAI_UTC_DELTA, UNCERTAINTY_MS, TimeRole
-from bluetooth_mesh.models import (
+from bluetooth_mesh.bluez.models import (
     ConfigClient,
     ConfigServer,
     DebugClient,
@@ -451,7 +451,7 @@ class PublicationCommand(ModelCommandMixin, NodeSelectionCommandMixin, Command):
         return RESOLUTIONS[resolution] if resolution is not None else None
 
     async def __call__(self, application, arguments):
-        from bluetooth_mesh import models
+        from bluetooth_mesh.bluez import models
 
         model = self.get_model(application)
         addresses = self.get_addresses(application, arguments)
@@ -515,7 +515,7 @@ class SubscribeCommand(Command):
     """
 
     async def __call__(self, application: Application, arguments):
-        from bluetooth_mesh import models
+        from bluetooth_mesh.bluez import models
 
         model = application.get_model_instance(
             int(arguments["--element"]), getattr(models, arguments["--model"])
@@ -549,7 +549,7 @@ class AddSubscriptionCommand(ModelCommandMixin, NodeSelectionCommandMixin, Comma
     """
 
     async def __call__(self, application, arguments):
-        from bluetooth_mesh import models
+        from bluetooth_mesh.bluez import models
 
         model = self.get_model(application)
         destinations = self.get_addresses(application, arguments)
@@ -592,7 +592,7 @@ class BindAppKeyCommand(ModelCommandMixin, NodeSelectionCommandMixin, Command):
     """
 
     async def __call__(self, application, arguments):
-        from bluetooth_mesh import models
+        from bluetooth_mesh.bluez import models
 
         model = self.get_model(application)
         destinations = self.get_addresses(application, arguments)
@@ -633,7 +633,7 @@ class UnsubscribeCommand(Command):
     """
 
     async def __call__(self, application: Application, arguments):
-        from bluetooth_mesh import models
+        from bluetooth_mesh.bluez import models
 
         model = application.get_model_instance(
             int(arguments["--element"]), getattr(models, arguments["--model"])

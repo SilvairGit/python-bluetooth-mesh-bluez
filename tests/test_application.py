@@ -6,8 +6,8 @@ import dbus_next.errors
 import dbus_next.signature
 import pytest
 
-from bluetooth_mesh.application import Application, Element
-from bluetooth_mesh.crypto import NetworkKey
+from bluetooth_mesh.bluez.application import Application, Element
+from bluetooth_mesh.network.crypto import NetworkKey
 
 pytestmark = [pytest.mark.asyncio]
 

@@ -23,7 +23,7 @@
 import pytest
 from asynctest import CoroutineMock, MagicMock, call
 
-from bluetooth_mesh.utils import Signal
+from bluetooth_mesh.bluez.utils import Signal
 
 
 @pytest.mark.asyncio
