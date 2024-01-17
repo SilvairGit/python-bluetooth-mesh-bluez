@@ -45,8 +45,8 @@ from dbus_next import DBusError, Variant
 from dbus_next.message import MessageFlag
 from dbus_next.service import PropertyAccess, ServiceInterface, dbus_property, method
 
-from bluetooth_mesh.crypto import ApplicationKey, DeviceKey, NetworkKey
-from bluetooth_mesh.utils import Signal
+from bluetooth_mesh.network.crypto import ApplicationKey, DeviceKey, NetworkKey
+from bluetooth_mesh.bluez.utils import Signal
 
 
 class DBusService:

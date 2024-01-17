@@ -21,7 +21,7 @@
 #
 import pytest
 
-from bluetooth_mesh.utils import construct_match
+from bluetooth_mesh.bluez.utils import construct_match
 
 
 @pytest.mark.parametrize(

@@ -23,7 +23,7 @@ from asyncio import Future
 
 import pytest
 
-from bluetooth_mesh.utils import Gatherer
+from bluetooth_mesh.bluez.utils import Gatherer
 
 
 @pytest.mark.asyncio
