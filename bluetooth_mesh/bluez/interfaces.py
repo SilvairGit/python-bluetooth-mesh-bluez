@@ -35,10 +35,11 @@ import logging
 import os
 import socket
 from collections import defaultdict
+from collections.abc import Mapping, Sequence
 from contextlib import suppress
 from datetime import timedelta
 from enum import Enum
-from typing import Any, Dict, Mapping, Optional, Sequence, Tuple
+from typing import Any
 from uuid import UUID
 
 from dbus_next import DBusError, Variant
@@ -329,14 +330,14 @@ class NetworkInterface:
 
     async def attach(
         self, app_defined_root: str, token: int
-    ) -> Tuple[str, Dict[int, Dict[Tuple[Optional[int], int], Mapping[str, Any]]]]:
+    ) -> tuple[str, dict[int, dict[tuple[int | None, int], Mapping[str, Any]]]]:
         path, configuration = await self._interface.call_attach(app_defined_root, token)
 
         return path, self._extract_model_config(configuration)
 
-    async def attach_fd(self, app_defined_root: str, token: int) -> Tuple[
+    async def attach_fd(self, app_defined_root: str, token: int) -> tuple[
         str,
-        Dict[int, Dict[Tuple[Optional[int], int], Mapping[str, Any]]],
+        dict[int, dict[tuple[int | None, int], Mapping[str, Any]]],
         socket.socket,
     ]:
         path, configuration, fd = await self._interface.call_attach_fd(app_defined_root, token)
@@ -346,9 +347,9 @@ class NetworkInterface:
 
         return path, self._extract_model_config(configuration), sock
 
-    async def attach_unix(self, app_defined_root: str, token: int, socket_path: str) -> Tuple[
+    async def attach_unix(self, app_defined_root: str, token: int, socket_path: str) -> tuple[
         str,
-        Dict[int, Dict[Tuple[Optional[int], int], Mapping[str, Any]]],
+        dict[int, dict[tuple[int | None, int], Mapping[str, Any]]],
         socket.socket,
     ]:
         with suppress(FileNotFoundError):
@@ -498,7 +499,7 @@ class NodeInterface:
         model: int,
         data: bytes,
         force_segmented: bool = False,
-        vendor: Optional[int] = None,
+        vendor: int | None = None,
     ) -> None:
         options = {"ForceSegmented": Variant("b", force_segmented)}
 
