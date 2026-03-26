@@ -37,9 +37,7 @@ class MockModel(MagicMock):
     INSTANCES = []
 
     def __init__(self, *args, **kwargs):
-        super().__init__(
-            *[arg for arg in args if not isinstance(arg, Element)], **kwargs
-        )
+        super().__init__(*[arg for arg in args if not isinstance(arg, Element)], **kwargs)
         MockModel.INSTANCES.append(self)
 
 
@@ -49,9 +47,7 @@ class MockVenforModel(MagicMock):
     INSTANCES = []
 
     def __init__(self, *args, **kwargs):
-        super().__init__(
-            *[arg for arg in args if not isinstance(arg, Element)], **kwargs
-        )
+        super().__init__(*[arg for arg in args if not isinstance(arg, Element)], **kwargs)
         MockVenforModel.INSTANCES.append(self)
 
 
@@ -75,9 +71,7 @@ def element(model_mocks):
 def test_message_received(element, source, app_index, status_encoded):
     status_parsed = AccessMessage.parse(status_encoded)
     element.message_received(source, app_index, False, status_encoded)
-    MockModel.INSTANCES[0].message_received.assert_called_once_with(
-        source, app_index, False, status_parsed
-    )
+    MockModel.INSTANCES[0].message_received.assert_called_once_with(source, app_index, False, status_parsed)
 
 
 def test_other_opcode_message_received(element, source, app_index, get_encoded):
@@ -100,9 +94,7 @@ def test_other_opcode_dev_message_received(element, source, net_index, get_encod
 
 def test_update_model_configuration(element):
     config = dict()
-    model_config = element.update_model_configuration(
-        (MockModel.MODEL_ID[0], MockModel.MODEL_ID[1]), config
-    )
+    model_config = element.update_model_configuration((MockModel.MODEL_ID[0], MockModel.MODEL_ID[1]), config)
     MockModel.INSTANCES[0].update_configuration.assert_called_once_with(model_config)
 
 
@@ -111,6 +103,4 @@ def test_update_vendor_model_configuration(element):
     model_config = element.update_model_configuration(
         (MockVenforModel.MODEL_ID[0], MockVenforModel.MODEL_ID[1]), config
     )
-    MockVenforModel.INSTANCES[0].update_configuration.assert_called_once_with(
-        model_config
-    )
+    MockVenforModel.INSTANCES[0].update_configuration.assert_called_once_with(model_config)

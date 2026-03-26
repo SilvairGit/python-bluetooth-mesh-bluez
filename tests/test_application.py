@@ -55,33 +55,21 @@ def dbus(monkeypatch, node, application):
 
         async def call_attach(self, app_root, token):
             if self.NODE is None:
-                raise dbus_next.errors.DBusError(
-                    "org.bluez.mesh.Failure", "Node doesn't exist"
-                )
+                raise dbus_next.errors.DBusError("org.bluez.mesh.Failure", "Node doesn't exist")
 
             if self.NODE.token != token:
-                raise dbus_next.errors.DBusError(
-                    "org.bluez.mesh.Failure", "Invalid token"
-                )
+                raise dbus_next.errors.DBusError("org.bluez.mesh.Failure", "Invalid token")
 
             return self.NODE.path, self.NODE.configuration
 
-        async def call_import(
-            self, app_root, uuid, dev_key, net_key, net_index, flags, iv_index, unicast
-        ):
+        async def call_import(self, app_root, uuid, dev_key, net_key, net_index, flags, iv_index, unicast):
             path = f"/org/bluez/mesh/node{uuid.hex()}"
 
             if MockMessageBus.SERVICE_OBJECTS.get(("org.bluez.mesh", path)):
-                raise dbus_next.errors.DBusError(
-                    "org.bluez.mesh.Failure", "Node exists"
-                )
+                raise dbus_next.errors.DBusError("org.bluez.mesh.Failure", "Node exists")
 
-            MockMessageBus.SERVICE_OBJECTS[
-                ("org.bluez.mesh", path)
-            ] = MockNodeProxyObject
-            MockNodeInterface.NODE = MockNetworkInterface.NODE = Node(
-                path, 0x5678, unicast
-            )
+            MockMessageBus.SERVICE_OBJECTS[("org.bluez.mesh", path)] = MockNodeProxyObject
+            MockNodeInterface.NODE = MockNetworkInterface.NODE = Node(path, 0x5678, unicast)
             application.join_complete(0x5678)
 
     class MockManagementInterface(MockInterface):
@@ -144,14 +132,10 @@ def dbus(monkeypatch, node, application):
         def get_proxy_object(self, service_name, object_path, introspection):
             logger.debug("get proxy object for %s:%s", service_name, object_path)
 
-            return self.SERVICE_OBJECTS[(service_name, object_path)](
-                service_name, object_path, introspection
-            )
+            return self.SERVICE_OBJECTS[(service_name, object_path)](service_name, object_path, introspection)
 
     if node:
-        MockMessageBus.SERVICE_OBJECTS[
-            ("org.bluez.mesh", node.path)
-        ] = MockNodeProxyObject
+        MockMessageBus.SERVICE_OBJECTS[("org.bluez.mesh", node.path)] = MockNodeProxyObject
 
     monkeypatch.setattr("dbus_next.aio.MessageBus", MockMessageBus)
 
@@ -193,9 +177,7 @@ async def test_attach_bad_token(application, dbus, node):
 async def test_attach_good_token(application, dbus, node):
     async with application:
         await application.attach(node.token)
-        assert (
-            application.node_interface._interface.proxy_object.object_path == node.path
-        )
+        assert application.node_interface._interface.proxy_object.object_path == node.path
 
 
 @pytest.mark.parametrize("node", [None])
@@ -214,9 +196,7 @@ class TestImportOnConnect:
         application.address = None
 
         async with application:
-            with pytest.raises(
-                AttributeError, match="Application didn't provide an address"
-            ):
+            with pytest.raises(AttributeError, match="Application didn't provide an address"):
                 await application.connect()
 
 
@@ -228,10 +208,7 @@ class TestAttachOnConnect:
         async with application:
             await application.connect()
 
-            assert (
-                application.node_interface._interface.proxy_object.object_path
-                == node.path
-            )
+            assert application.node_interface._interface.proxy_object.object_path == node.path
             assert application.address == node.address
 
             with pytest.raises(AttributeError, match="Can't set address"):

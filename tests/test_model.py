@@ -28,8 +28,8 @@ from unittest.mock import MagicMock, call
 
 import pytest
 
-from bluetooth_mesh.bluez.models import Model
 from bluetooth_mesh.bluez.interfaces import NodeInterface
+from bluetooth_mesh.bluez.models import Model
 from bluetooth_mesh.messages.generic.onoff import GenericOnOffOpcode
 
 
@@ -64,9 +64,7 @@ async def test_single_expect(model, status_parsed, source, app_index):
 
 @pytest.mark.asyncio
 async def test_wildcard_expect(model, status_parsed, source, app_index):
-    status = model.expect_app(
-        source, app_index, False, status_parsed["opcode"], dict(present_onoff=...)
-    )
+    status = model.expect_app(source, app_index, False, status_parsed["opcode"], dict(present_onoff=...))
     model.message_received(source, app_index, False, status_parsed)
     assert status_parsed == await status
 
@@ -108,19 +106,13 @@ def test_multiple_callback(model, status_parsed, source, app_index):
     model.app_message_callbacks[status_parsed["opcode"]].add(listener_mock_repeatable)
     model.app_message_callbacks[status_parsed["opcode"]].add(listener_mock_oneshot)
     model.message_received(source, app_index, False, status_parsed)
-    listener_mock_repeatable.assert_called_once_with(
-        source, app_index, False, status_parsed
-    )
-    listener_mock_oneshot.assert_called_once_with(
-        source, app_index, False, status_parsed
-    )
+    listener_mock_repeatable.assert_called_once_with(source, app_index, False, status_parsed)
+    listener_mock_oneshot.assert_called_once_with(source, app_index, False, status_parsed)
 
     listener_mock_repeatable.reset_mock()
     listener_mock_oneshot.reset_mock()
     model.message_received(source, app_index, False, status_parsed)
-    listener_mock_repeatable.assert_called_once_with(
-        source, app_index, False, status_parsed
-    )
+    listener_mock_repeatable.assert_called_once_with(source, app_index, False, status_parsed)
     listener_mock_oneshot.assert_not_called()
 
 
@@ -133,9 +125,7 @@ async def test_dev_single_expect(model, status_parsed, source, net_index):
 
 @pytest.mark.asyncio
 async def test_dev_wildcard_expect(model, status_parsed, source, net_index):
-    status = model.expect_dev(
-        source, net_index, status_parsed["opcode"], dict(present_onoff=...)
-    )
+    status = model.expect_dev(source, net_index, status_parsed["opcode"], dict(present_onoff=...))
     model.dev_key_message_received(source, True, net_index, status_parsed)
     assert status_parsed == await status
 
@@ -188,24 +178,18 @@ def test_dev_multiple_callback(model, status_parsed, source, net_index):
 
 
 @pytest.mark.asyncio
-async def test_send_app(
-    model, status_parsed, destination, app_index, element_path, node_interface
-):
+async def test_send_app(model, status_parsed, destination, app_index, element_path, node_interface):
     await model.send_app(
         destination,
         app_index,
         status_parsed["opcode"],
         status_parsed["generic_onoff_status"],
     )
-    node_interface.send.assert_called_once_with(
-        element_path, destination, app_index, b"\x82\x04\x00"
-    )
+    node_interface.send.assert_called_once_with(element_path, destination, app_index, b"\x82\x04\x00")
 
 
 @pytest.mark.asyncio
-async def test_send_dev(
-    model, status_parsed, destination, net_index, element_path, node_interface
-):
+async def test_send_dev(model, status_parsed, destination, net_index, element_path, node_interface):
     await model.send_dev(
         destination,
         net_index,
@@ -218,9 +202,7 @@ async def test_send_dev(
 
 
 @pytest.mark.asyncio
-async def test_repeat(
-    model, status_parsed, destination, app_index, element_path, node_interface
-):
+async def test_repeat(model, status_parsed, destination, app_index, element_path, node_interface):
     request = partial(
         model.send_app,
         destination,
@@ -236,9 +218,7 @@ async def test_repeat(
 
 
 @pytest.mark.asyncio
-async def test_query(
-    model, status_parsed, source, destination, app_index, element_path, node_interface
-):
+async def test_query(model, status_parsed, source, destination, app_index, element_path, node_interface):
     request_future = Future()
 
     async def request():
@@ -255,15 +235,11 @@ async def test_query(
     await request_future
     model.message_received(source, app_index, False, status_parsed)
     await query_status
-    node_interface.send.assert_called_once_with(
-        element_path, destination, app_index, b"\x82\x04\x00"
-    )
+    node_interface.send.assert_called_once_with(element_path, destination, app_index, b"\x82\x04\x00")
 
 
 @pytest.mark.asyncio
-async def test_bulk_query(
-    model, status_parsed, destination, app_index, element_path, node_interface
-):
+async def test_bulk_query(model, status_parsed, destination, app_index, element_path, node_interface):
     async def request(future, dest):
         await model.send_app(
             dest,
@@ -277,13 +253,10 @@ async def test_bulk_query(
     futures = {addr: Future() for addr in destinations}
     requests = {addr: partial(request, futures[addr], addr) for addr in destinations}
     statuses = {
-        addr: model.expect_app(addr, app_index, False, status_parsed["opcode"], {})
-        for addr in destinations
+        addr: model.expect_app(addr, app_index, False, status_parsed["opcode"], {}) for addr in destinations
     }
 
-    query_status = asyncio.ensure_future(
-        model.bulk_query(requests, statuses, send_interval=0.01)
-    )
+    query_status = asyncio.ensure_future(model.bulk_query(requests, statuses, send_interval=0.01))
     await asyncio.wait(futures.values())
 
     for addr in destinations:
@@ -297,9 +270,7 @@ async def test_bulk_query(
 
 
 @pytest.mark.asyncio
-async def test_bulk_query_timeout(
-    model, status_parsed, destination, app_index, element_path, node_interface
-):
+async def test_bulk_query_timeout(model, status_parsed, destination, app_index, element_path, node_interface):
     async def request(dest):
         await model.send_app(
             dest,
