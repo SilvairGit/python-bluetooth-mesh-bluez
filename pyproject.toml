@@ -75,14 +75,20 @@ disable = [
     "missing-class-docstring",
     "missing-function-docstring",
     "invalid-name",
+    "too-few-public-methods",
 ]
 enable = [
     "useless-suppression",
 ]
 fail-on = "useless-suppression"
 
+[tool.pylint.design]
+max-args = 8
+max-positional-arguments = 9
+
 [tool.pylint.main]
 py-version = "3.14"
+evaluation = "10.0 - ((float(5 * error + warning + refactor + convention + info) / statement) * 10) - ((error + warning + refactor + convention + info) * 0.01)"
 
 [tool.pylint.format]
 max-line-length = 110

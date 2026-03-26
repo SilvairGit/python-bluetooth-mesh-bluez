@@ -18,6 +18,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
+# pylint: disable=too-many-lines
+
 """
 This module implements mesh models, both clients and servers.
 """
@@ -155,7 +157,7 @@ class ConfigServer(Model):
     OPCODES = {}  # implemented internally by BlueZ
 
 
-class ConfigClient(Model):
+class ConfigClient(Model):  # pylint: disable=too-many-public-methods
     MODEL_ID = (None, 0x0001)
     OPCODES = {
         ConfigOpcode.CONFIG_APPKEY_LIST,
@@ -189,9 +191,9 @@ class ConfigClient(Model):
         vendor_id, model_id = model.MODEL_ID
 
         if vendor_id is not None:
-            return dict(vendor_id=vendor_id, model_id=model_id)
+            return {"vendor_id": vendor_id, "model_id": model_id}
 
-        return dict(model_id=model_id)
+        return {"model_id": model_id}
 
     async def get_param(
         self,
@@ -210,7 +212,7 @@ class ConfigClient(Model):
                 node,
                 net_index=net_index,
                 opcode=request["opcode"],
-                params=request["params"] or dict(),
+                params=request["params"] or {},
             )
             for node in nodes
         }
@@ -220,7 +222,7 @@ class ConfigClient(Model):
                 node,
                 net_index=0,
                 opcode=status["opcode"],
-                params=status["params"] or dict(),
+                params=status["params"] or {},
             )
             for node in nodes
         }
@@ -236,7 +238,7 @@ class ConfigClient(Model):
                 aw = progress_callback(address, result[params_name]["data"], done, total)
                 if inspect.isawaitable(aw):
                     await aw
-            except Exception as ex:
+            except Exception as ex:  # pylint: disable=broad-exception-caught
                 self.logger.warning("Callback failed for addr %s: %s", address, ex)
 
         results = await self.bulk_query(
@@ -263,18 +265,18 @@ class ConfigClient(Model):
         return await self.get_param(
             nodes,
             net_index,
-            request=dict(
-                opcode=ConfigOpcode.CONFIG_COMPOSITION_DATA_GET,
-                params=dict(
-                    page=0,
-                ),
-            ),
-            status=dict(
-                opcode=ConfigOpcode.CONFIG_COMPOSITION_DATA_STATUS,
-                params=dict(
-                    page=0,
-                ),
-            ),
+            request={
+                "opcode": ConfigOpcode.CONFIG_COMPOSITION_DATA_GET,
+                "params": {
+                    "page": 0,
+                },
+            },
+            status={
+                "opcode": ConfigOpcode.CONFIG_COMPOSITION_DATA_STATUS,
+                "params": {
+                    "page": 0,
+                },
+            },
             send_interval=send_interval,
             progress_callback=progress_callback,
             timeout=timeout or 2 * send_interval * len(nodes),
@@ -291,8 +293,8 @@ class ConfigClient(Model):
         return await self.get_param(
             nodes,
             net_index,
-            request=dict(opcode=ConfigOpcode.CONFIG_DEFAULT_TTL_GET, params=dict()),
-            status=dict(opcode=ConfigOpcode.CONFIG_DEFAULT_TTL_STATUS, params=dict()),
+            request={"opcode": ConfigOpcode.CONFIG_DEFAULT_TTL_GET, "params": {}},
+            status={"opcode": ConfigOpcode.CONFIG_DEFAULT_TTL_STATUS, "params": {}},
             send_interval=send_interval,
             progress_callback=progress_callback,
             timeout=timeout or 2 * send_interval * len(nodes),
@@ -309,8 +311,8 @@ class ConfigClient(Model):
         return await self.get_param(
             nodes,
             net_index,
-            request=dict(opcode=ConfigOpcode.CONFIG_RELAY_GET, params=dict()),
-            status=dict(opcode=ConfigOpcode.CONFIG_RELAY_STATUS, params=dict()),
+            request={"opcode": ConfigOpcode.CONFIG_RELAY_GET, "params": {}},
+            status={"opcode": ConfigOpcode.CONFIG_RELAY_STATUS, "params": {}},
             send_interval=send_interval,
             progress_callback=progress_callback,
             timeout=timeout or 2 * send_interval * len(nodes),
@@ -328,18 +330,18 @@ class ConfigClient(Model):
         return await self.get_param(
             nodes,
             net_index,
-            request=dict(
-                opcode=ConfigOpcode.CONFIG_KEY_REFRESH_PHASE_GET,
-                params=dict(
-                    net_key_index=0,
-                ),
-            ),
-            status=dict(
-                opcode=ConfigOpcode.CONFIG_KEY_REFRESH_PHASE_STATUS,
-                params=dict(
-                    net_key_index=net_key_index,
-                ),
-            ),
+            request={
+                "opcode": ConfigOpcode.CONFIG_KEY_REFRESH_PHASE_GET,
+                "params": {
+                    "net_key_index": 0,
+                },
+            },
+            status={
+                "opcode": ConfigOpcode.CONFIG_KEY_REFRESH_PHASE_STATUS,
+                "params": {
+                    "net_key_index": net_key_index,
+                },
+            },
             send_interval=send_interval,
             progress_callback=progress_callback,
             timeout=timeout or 2 * send_interval * len(nodes),
@@ -354,10 +356,10 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=status_opcode,
-            params=dict(
-                net_key_index=net_key_index,
-                status=StatusCode.SUCCESS,
-            ),
+            params={
+                "net_key_index": net_key_index,
+                "status": StatusCode.SUCCESS,
+            },
         )
 
         request = partial(
@@ -365,10 +367,10 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=ConfigOpcode.CONFIG_NETKEY_ADD,
-            params=dict(
-                net_key_index=net_key_index,
-                net_key=net_key.bytes,
-            ),
+            params={
+                "net_key_index": net_key_index,
+                "net_key": net_key.bytes,
+            },
         )
 
         status = await self.query(request, status)
@@ -379,16 +381,16 @@ class ConfigClient(Model):
         return NetKeyStatus(net_key_index=net_key_index)
 
     async def delete_net_key(self, destination: int, net_index: int, net_key_index: int) -> NetKeyStatus:
-        status_opcode = (ConfigOpcode.CONFIG_NETKEY_STATUS,)
+        status_opcode = ConfigOpcode.CONFIG_NETKEY_STATUS
 
         status = self.expect_dev(
             destination,
             net_index=net_index,
             opcode=status_opcode,
-            params=dict(
-                net_key_index=net_key_index,
-                status=StatusCode.SUCCESS,
-            ),
+            params={
+                "net_key_index": net_key_index,
+                "status": StatusCode.SUCCESS,
+            },
         )
 
         request = partial(
@@ -396,9 +398,9 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=ConfigOpcode.CONFIG_NETKEY_DELETE,
-            params=dict(
-                net_key_index=net_key_index,
-            ),
+            params={
+                "net_key_index": net_key_index,
+            },
         )
 
         status = await self.query(request, status)
@@ -423,10 +425,10 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=status_opcode,
-            params=dict(
-                net_key_index=net_key_index,
-                app_key_index=app_key_index,
-            ),
+            params={
+                "net_key_index": net_key_index,
+                "app_key_index": app_key_index,
+            },
         )
 
         request = partial(
@@ -434,11 +436,11 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=ConfigOpcode.CONFIG_APPKEY_ADD,
-            params=dict(
-                net_key_index=net_key_index,
-                app_key_index=app_key_index,
-                app_key=app_key.bytes,
-            ),
+            params={
+                "net_key_index": net_key_index,
+                "app_key_index": app_key_index,
+                "app_key": app_key.bytes,
+            },
         )
 
         status = await self.query(request, status)
@@ -462,10 +464,10 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=status_opcode,
-            params=dict(
-                net_key_index=net_key_index,
-                app_key_index=app_key_index,
-            ),
+            params={
+                "net_key_index": net_key_index,
+                "app_key_index": app_key_index,
+            },
         )
 
         request = partial(
@@ -473,10 +475,10 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=ConfigOpcode.CONFIG_APPKEY_DELETE,
-            params=dict(
-                net_key_index=net_key_index,
-                app_key_index=app_key_index,
-            ),
+            params={
+                "net_key_index": net_key_index,
+                "app_key_index": app_key_index,
+            },
         )
 
         status = await self.query(request, status)
@@ -501,10 +503,10 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=status_opcode,
-            params=dict(
-                net_key_index=net_key_index,
-                app_key_index=app_key_index,
-            ),
+            params={
+                "net_key_index": net_key_index,
+                "app_key_index": app_key_index,
+            },
         )
 
         request = partial(
@@ -512,11 +514,11 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=ConfigOpcode.CONFIG_APPKEY_UPDATE,
-            params=dict(
-                app_key_index=0,
-                net_key_index=0,
-                app_key=app_key.bytes,
-            ),
+            params={
+                "app_key_index": 0,
+                "net_key_index": 0,
+                "app_key": app_key.bytes,
+            },
         )
 
         status = await self.query(request, status)
@@ -541,11 +543,11 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=status_opcode,
-            params=dict(
-                element_address=element_address,
-                app_key_index=app_key_index,
-                model=self._get_model_id(model),
-            ),
+            params={
+                "element_address": element_address,
+                "app_key_index": app_key_index,
+                "model": self._get_model_id(model),
+            },
         )
 
         request = partial(
@@ -553,11 +555,11 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=ConfigOpcode.CONFIG_MODEL_APP_BIND,
-            params=dict(
-                element_address=element_address,
-                app_key_index=app_key_index,
-                model=self._get_model_id(model),
-            ),
+            params={
+                "element_address": element_address,
+                "app_key_index": app_key_index,
+                "model": self._get_model_id(model),
+            },
         )
 
         status = await self.query(request, status)
@@ -579,7 +581,7 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=status_opcode,
-            params=dict(),
+            params={},
         )
 
         request = partial(
@@ -587,7 +589,7 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=ConfigOpcode.CONFIG_NETWORK_TRANSMIT_GET,
-            params=dict(),
+            params={},
         )
 
         status = await self.query(request, status)
@@ -603,7 +605,7 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=status_opcode,
-            params=dict(interval=interval, count=count),
+            params={"interval": interval, "count": count},
         )
 
         request = partial(
@@ -611,7 +613,7 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=ConfigOpcode.CONFIG_NETWORK_TRANSMIT_SET,
-            params=dict(interval=interval, count=count),
+            params={"interval": interval, "count": count},
         )
 
         status = await self.query(request, status)
@@ -627,9 +629,9 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=status_opcode,
-            params=dict(
-                net_key_index=net_key_index,
-            ),
+            params={
+                "net_key_index": net_key_index,
+            },
         )
 
         request = partial(
@@ -637,10 +639,10 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=ConfigOpcode.CONFIG_NETKEY_UPDATE,
-            params=dict(
-                net_key_index=0,
-                net_key=net_key.bytes,
-            ),
+            params={
+                "net_key_index": 0,
+                "net_key": net_key.bytes,
+            },
         )
 
         status = await self.query(request, status)
@@ -665,11 +667,11 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=status_opcode,
-            params=dict(
-                element_address=element_address,
-                address=subscription_address,
-                model=self._get_model_id(model),
-            ),
+            params={
+                "element_address": element_address,
+                "address": subscription_address,
+                "model": self._get_model_id(model),
+            },
         )
 
         request = partial(
@@ -677,11 +679,11 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=ConfigOpcode.CONFIG_MODEL_SUBSCRIPTION_ADD,
-            params=dict(
-                element_address=element_address,
-                address=subscription_address,
-                model=self._get_model_id(model),
-            ),
+            params={
+                "element_address": element_address,
+                "address": subscription_address,
+                "model": self._get_model_id(model),
+            },
         )
 
         status = await self.query(request, status)
@@ -710,11 +712,11 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=status_opcode,
-            params=dict(
-                element_address=element_address,
-                address=subscription_address,
-                model=self._get_model_id(model),
-            ),
+            params={
+                "element_address": element_address,
+                "address": subscription_address,
+                "model": self._get_model_id(model),
+            },
         )
 
         request = partial(
@@ -722,11 +724,11 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=ConfigOpcode.CONFIG_MODEL_SUBSCRIPTION_DELETE,
-            params=dict(
-                element_address=element_address,
-                address=subscription_address,
-                model=self._get_model_id(model),
-            ),
+            params={
+                "element_address": element_address,
+                "address": subscription_address,
+                "model": self._get_model_id(model),
+            },
         )
 
         status = await self.query(request, status)
@@ -750,11 +752,11 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=status_opcode,
-            params=dict(
-                element_address=element_address,
-                address=0,
-                model=self._get_model_id(model),
-            ),
+            params={
+                "element_address": element_address,
+                "address": 0,
+                "model": self._get_model_id(model),
+            },
         )
 
         request = partial(
@@ -762,10 +764,10 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=ConfigOpcode.CONFIG_MODEL_SUBSCRIPTION_DELETE_ALL,
-            params=dict(
-                element_address=element_address,
-                model=self._get_model_id(model),
-            ),
+            params={
+                "element_address": element_address,
+                "model": self._get_model_id(model),
+            },
         )
 
         status = await self.query(request, status)
@@ -795,10 +797,10 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=status_opcode,
-            params=dict(
-                element_address=element_address,
-                model=self._get_model_id(model),
-            ),
+            params={
+                "element_address": element_address,
+                "model": self._get_model_id(model),
+            },
         )
 
         request = partial(
@@ -806,10 +808,10 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=request_opcode,
-            params=dict(
-                element_address=element_address,
-                model=self._get_model_id(model),
-            ),
+            params={
+                "element_address": element_address,
+                "model": self._get_model_id(model),
+            },
         )
 
         status = await self.query(request, status)
@@ -833,7 +835,7 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=status_opcode,
-            params=dict(),
+            params={},
         )
 
         request = partial(
@@ -841,7 +843,7 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=ConfigOpcode.CONFIG_MODEL_PUBLICATION_GET,
-            params=dict(element_address=element_address, model=self._get_model_id(model)),
+            params={"element_address": element_address, "model": self._get_model_id(model)},
         )
 
         status = await self.query(request, status)
@@ -851,10 +853,10 @@ class ConfigClient(Model):
             * status[params_name]["publish_period"]["number_of_steps"]
         )
 
-        retransmissions = dict(
-            count=status[params_name]["retransmit"]["count"],
-            interval=timedelta(milliseconds=status[params_name]["retransmit"]["interval"]),
-        )
+        retransmissions = {
+            "count": status[params_name]["retransmit"]["count"],
+            "interval": timedelta(milliseconds=status[params_name]["retransmit"]["interval"]),
+        }
 
         return ModelPublicationStatus(
             status[params_name]["element_address"],
@@ -866,7 +868,7 @@ class ConfigClient(Model):
             model,
         )
 
-    async def set_publication(
+    async def set_publication(  # pylint: disable=too-many-arguments, disable=too-many-positional-arguments, too-many-locals
         self,
         destination: int,
         net_index: int,
@@ -887,21 +889,21 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=ConfigOpcode.CONFIG_MODEL_PUBLICATION_STATUS,
-            params=dict(
-                status=StatusCode.SUCCESS,
-                element_address=element_address,
-                publish_address=publication_address,
-                ttl=ttl,
-                app_key_index=app_key_index,
-                credential_flag=PublishFriendshipCredentialsFlag.MASTER_SECURITY,
-                RFU=0,
-                publish_period=dict(
-                    step_resolution=publish_step_resolution,
-                    number_of_steps=publish_number_of_steps,
-                ),
-                retransmit=dict(count=retransmit_count, interval=retransmit_interval),
-                model=self._get_model_id(model),
-            ),
+            params={
+                "status": StatusCode.SUCCESS,
+                "element_address": element_address,
+                "publish_address": publication_address,
+                "ttl": ttl,
+                "app_key_index": app_key_index,
+                "credential_flag": PublishFriendshipCredentialsFlag.MASTER_SECURITY,
+                "RFU": 0,
+                "publish_period": {
+                    "step_resolution": publish_step_resolution,
+                    "number_of_steps": publish_number_of_steps,
+                },
+                "retransmit": {"count": retransmit_count, "interval": retransmit_interval},
+                "model": self._get_model_id(model),
+            },
         )
 
         request = partial(
@@ -909,20 +911,20 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=ConfigOpcode.CONFIG_MODEL_PUBLICATION_SET,
-            params=dict(
-                element_address=element_address,
-                publish_address=publication_address,
-                ttl=ttl,
-                app_key_index=app_key_index,
-                credential_flag=PublishFriendshipCredentialsFlag.MASTER_SECURITY,
-                RFU=0,
-                publish_period=dict(
-                    step_resolution=publish_step_resolution,
-                    number_of_steps=publish_number_of_steps,
-                ),
-                retransmit=dict(count=retransmit_count, interval=retransmit_interval),
-                model=self._get_model_id(model),
-            ),
+            params={
+                "element_address": element_address,
+                "publish_address": publication_address,
+                "ttl": ttl,
+                "app_key_index": app_key_index,
+                "credential_flag": PublishFriendshipCredentialsFlag.MASTER_SECURITY,
+                "RFU": 0,
+                "publish_period": {
+                    "step_resolution": publish_step_resolution,
+                    "number_of_steps": publish_number_of_steps,
+                },
+                "retransmit": {"count": retransmit_count, "interval": retransmit_interval},
+                "model": self._get_model_id(model),
+            },
         )
 
         status = await self.query(request, status, send_interval=0.2, timeout=4)
@@ -935,10 +937,10 @@ class ConfigClient(Model):
             * status[params_name]["publish_period"]["number_of_steps"]
         )
 
-        retransmissions = dict(
-            count=status[params_name]["retransmit"]["count"],
-            interval=timedelta(milliseconds=status[params_name]["retransmit"]["interval"]),
-        )
+        retransmissions = {
+            "count": status[params_name]["retransmit"]["count"],
+            "interval": timedelta(milliseconds=status[params_name]["retransmit"]["interval"]),
+        }
 
         return ModelPublicationStatus(
             status[params_name]["element_address"],
@@ -964,9 +966,9 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=status_opcode,
-            params=dict(
-                beacon=SecureNetworkBeacon.ON if enabled else SecureNetworkBeacon.OFF,
-            ),
+            params={
+                "beacon": SecureNetworkBeacon.ON if enabled else SecureNetworkBeacon.OFF,
+            },
         )
 
         request = partial(
@@ -974,9 +976,9 @@ class ConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=ConfigOpcode.CONFIG_BEACON_SET,
-            params=dict(
-                beacon=SecureNetworkBeacon.ON if enabled else SecureNetworkBeacon.OFF,
-            ),
+            params={
+                "beacon": SecureNetworkBeacon.ON if enabled else SecureNetworkBeacon.OFF,
+            },
         )
 
         status = await self.query(request, status, send_interval=send_interval, timeout=timeout)
@@ -1022,9 +1024,9 @@ class HealthClient(Model):
             app_index=app_index,
             destination=None,
             opcode=status_opcode,
-            params=dict(
-                attention=attention,
-            ),
+            params={
+                "attention": attention,
+            },
         )
 
         request = partial(
@@ -1032,9 +1034,9 @@ class HealthClient(Model):
             destination,
             app_index=app_index,
             opcode=HealthOpcode.HEALTH_ATTENTION_SET,
-            params=dict(
-                attention=attention,
-            ),
+            params={
+                "attention": attention,
+            },
         )
 
         status = await self.query(request, status)
@@ -1046,9 +1048,9 @@ class HealthClient(Model):
             destination,
             app_index=app_index,
             opcode=HealthOpcode.HEALTH_ATTENTION_SET_UNACKNOWLEDGED,
-            params=dict(
-                attention=attention,
-            ),
+            params={
+                "attention": attention,
+            },
         )
 
         await self.repeat(request)
@@ -1088,7 +1090,7 @@ class DebugClient(Model):
                 node,
                 net_index=net_index,
                 opcode=DebugOpcode.SILVAIR_DEBUG,
-                params=dict(subopcode=request),
+                params={"subopcode": request},
             )
             for node in nodes
         }
@@ -1098,7 +1100,7 @@ class DebugClient(Model):
                 node,
                 net_index=net_index,
                 opcode=DebugOpcode.SILVAIR_DEBUG,
-                params=dict(subopcode=status),
+                params={"subopcode": status},
             )
             for node in nodes
         }
@@ -1115,7 +1117,7 @@ class DebugClient(Model):
 
                 if inspect.isawaitable(aw):
                     await aw
-            except Exception as ex:
+            except Exception as ex:  # pylint: disable=broad-exception-caught
                 self.logger.warning("Callback failed for addr %s: %s", address, ex)
 
         results = await self.bulk_query(
@@ -1204,10 +1206,10 @@ class DebugClient(Model):
                 node,
                 net_index=app_index,
                 opcode=DebugOpcode.SILVAIR_DEBUG,
-                params=dict(
-                    subopcode=DebugSubOpcode.ARAP_LIST_CONTENT_GET,
-                    data=dict(page=0),
-                ),
+                params={
+                    "subopcode": DebugSubOpcode.ARAP_LIST_CONTENT_GET,
+                    "data": {"page": 0},
+                },
             )
             for node in nodes
         }
@@ -1219,7 +1221,7 @@ class DebugClient(Model):
                 node,
                 net_index=0,
                 opcode=status_opcode,
-                params=dict(subopcode=DebugSubOpcode.ARAP_LIST_CONTENT_STATUS),
+                params={"subopcode": DebugSubOpcode.ARAP_LIST_CONTENT_STATUS},
             )
             for node in nodes
         }
@@ -1292,7 +1294,7 @@ class GenericOnOffClient(Model):
             app_index=app_index,
             destination=None,
             opcode=status_opcode,
-            params=dict(present_onoff=onoff),
+            params={"present_onoff": onoff},
         )
 
         async def request():
@@ -1301,12 +1303,12 @@ class GenericOnOffClient(Model):
                 destination,
                 app_index=app_index,
                 opcode=GenericOnOffOpcode.GENERIC_ONOFF_SET,
-                params=dict(
-                    onoff=onoff,
-                    tid=tid,
-                    transition_time=0,
-                    delay=current_delay,
-                ),
+                params={
+                    "onoff": onoff,
+                    "tid": tid,
+                    "transition_time": 0,
+                    "delay": current_delay,
+                },
             )
             current_delay = max(0.0, current_delay - send_interval)
 
@@ -1335,12 +1337,12 @@ class GenericOnOffClient(Model):
                 destination,
                 app_index=app_index,
                 opcode=GenericOnOffOpcode.GENERIC_ONOFF_SET_UNACKNOWLEDGED,
-                params=dict(
-                    onoff=onoff,
-                    tid=tid,
-                    transition_time=transition_time,
-                    delay=current_delay,
-                ),
+                params={
+                    "onoff": onoff,
+                    "tid": tid,
+                    "transition_time": transition_time,
+                    "delay": current_delay,
+                },
             )
             current_delay = max(0.0, current_delay - send_interval)
 
@@ -1366,7 +1368,7 @@ class GenericOnOffClient(Model):
                 node,
                 app_index=app_index,
                 opcode=GenericOnOffOpcode.GENERIC_ONOFF_GET,
-                params=dict(),
+                params={},
             )
             for node in nodes
         }
@@ -1379,7 +1381,7 @@ class GenericOnOffClient(Model):
                 app_index=0,
                 destination=None,
                 opcode=status_opcode,
-                params=dict(),
+                params={},
             )
             for node in nodes
         }
@@ -1431,12 +1433,12 @@ class SceneClient(Model):
                 destination,
                 app_index=app_index,
                 opcode=SceneOpcode.SCENE_RECALL_UNACKNOWLEDGED,
-                params=dict(
-                    scene_number=scene_number,
-                    tid=tid,
-                    transition_time=transition_time,
-                    delay=current_delay,
-                ),
+                params={
+                    "scene_number": scene_number,
+                    "tid": tid,
+                    "transition_time": transition_time,
+                    "delay": current_delay,
+                },
             )
             current_delay = max(0.0, current_delay - send_interval)
 
@@ -1458,7 +1460,7 @@ class SceneClient(Model):
                 node,
                 app_index=app_index,
                 opcode=SceneOpcode.SCENE_GET,
-                params=dict(),
+                params={},
             )
             for node in nodes
         }
@@ -1471,7 +1473,7 @@ class SceneClient(Model):
                 app_index=0,
                 destination=None,
                 opcode=status_opcode,
-                params=dict(),
+                params={},
             )
             for node in nodes
         }
@@ -1522,12 +1524,12 @@ class GenericLevelClient(Model):
                 destination,
                 app_index=app_index,
                 opcode=GenericLevelOpcode.GENERIC_LEVEL_SET_UNACKNOWLEDGED,
-                params=dict(
-                    level=level,
-                    tid=tid,
-                    transition_time=transition_time,
-                    delay=current_delay,
-                ),
+                params={
+                    "level": level,
+                    "tid": tid,
+                    "transition_time": transition_time,
+                    "delay": current_delay,
+                },
             )
             current_delay = max(0.0, current_delay - send_interval)
 
@@ -1587,10 +1589,10 @@ class LightLightnessClient(Model):
                 destination,
                 app_index=app_index,
                 opcode=LightLightnessSetupOpcode.LIGHT_LIGHTNESS_SETUP_RANGE_SET_UNACKNOWLEDGED,
-                params=dict(
-                    range_min=min_lightness,
-                    range_max=max_lightness,
-                ),
+                params={
+                    "range_min": min_lightness,
+                    "range_max": max_lightness,
+                },
             )
 
             return await ret
@@ -1612,7 +1614,7 @@ class LightLightnessClient(Model):
             destination=destination,
             app_index=app_index,
             opcode=LightLightnessSetupOpcode.LIGHT_LIGHTNESS_SETUP_RANGE_SET,
-            params=dict(range_min=min_lightness, range_max=max_lightness, tid=self.tid()),
+            params={"range_min": min_lightness, "range_max": max_lightness, "tid": self.tid()},
         )
 
         status_opcode = LightLightnessOpcode.LIGHT_LIGHTNESS_RANGE_STATUS
@@ -1622,7 +1624,7 @@ class LightLightnessClient(Model):
             app_index=0,
             destination=None,
             opcode=status_opcode,
-            params=dict(),
+            params={},
         )
 
         result = await self.query(
@@ -1648,7 +1650,7 @@ class LightLightnessClient(Model):
                 node,
                 app_index=app_index,
                 opcode=LightLightnessOpcode.LIGHT_LIGHTNESS_RANGE_GET,
-                params=dict(),
+                params={},
             )
             for node in nodes
         }
@@ -1661,7 +1663,7 @@ class LightLightnessClient(Model):
                 app_index=app_index,
                 destination=None,
                 opcode=status_opcode,
-                params=dict(),
+                params={},
             )
             for node in nodes
         }
@@ -1692,7 +1694,7 @@ class LightLightnessClient(Model):
                 node,
                 app_index=app_index,
                 opcode=LightLightnessOpcode.LIGHT_LIGHTNESS_GET,
-                params=dict(),
+                params={},
             )
             for node in nodes
         }
@@ -1705,7 +1707,7 @@ class LightLightnessClient(Model):
                 app_index=0,
                 destination=None,
                 opcode=status_opcode,
-                params=dict(),
+                params={},
             )
             for node in nodes
         }
@@ -1742,12 +1744,12 @@ class LightLightnessClient(Model):
                 destination,
                 app_index=app_index,
                 opcode=LightLightnessOpcode.LIGHT_LIGHTNESS_SET_UNACKNOWLEDGED,
-                params=dict(
-                    lightness=lightness,
-                    delay=remaining_delay,
-                    tid=tid,
-                    transition_time=transition_time,
-                ),
+                params={
+                    "lightness": lightness,
+                    "delay": remaining_delay,
+                    "tid": tid,
+                    "transition_time": transition_time,
+                },
             )
             remaining_delay = max(0.0, remaining_delay - send_interval)
 
@@ -1761,7 +1763,7 @@ class LightLightnessClient(Model):
         lightness: int,
         app_index: int,
         *,
-        delay: float = 0.5,
+        _delay: float = 0.5,
         send_interval: float = 0.1,
         timeout: Optional[float] = None,
     ) -> Dict[int, Optional[Any]]:
@@ -1771,7 +1773,7 @@ class LightLightnessClient(Model):
                 node,
                 app_index=app_index,
                 opcode=LightLightnessOpcode.LIGHT_LIGHTNESS_SET,
-                params=dict(lightness=lightness, tid=self.tid()),
+                params={"lightness": lightness, "tid": self.tid()},
             )
             for node in nodes
         }
@@ -1784,7 +1786,7 @@ class LightLightnessClient(Model):
                 app_index=0,
                 destination=None,
                 opcode=status_opcode,
-                params=dict(),
+                params={},
             )
             for node in nodes
         }
@@ -1827,7 +1829,7 @@ class SensorClient(Model):
                 node,
                 app_index=app_index,
                 opcode=SensorOpcode.SENSOR_DESCRIPTOR_GET,
-                params=dict(),
+                params={},
             )
             for node in nodes
         }
@@ -1840,7 +1842,7 @@ class SensorClient(Model):
                 app_index=0,
                 destination=None,
                 opcode=status_opcode,
-                params=dict(),
+                params={},
             )
             for node in nodes
         }
@@ -1872,7 +1874,7 @@ class SensorClient(Model):
                 node,
                 app_index=app_index,
                 opcode=SensorOpcode.SENSOR_GET,
-                params=dict(property_id=property_id),
+                params={"property_id": property_id},
             )
             for node in nodes
         }
@@ -1885,7 +1887,7 @@ class SensorClient(Model):
                 app_index=0,
                 destination=None,
                 opcode=status_opcode,
-                params=dict(),
+                params={},
             )
             for node in nodes
         }
@@ -1936,7 +1938,7 @@ class LightCTLClient(Model):
                 node,
                 app_index=app_index,
                 opcode=LightCTLOpcode.LIGHT_CTL_TEMPERATURE_GET,
-                params=dict(),
+                params={},
             )
             for node in nodes
         }
@@ -1949,7 +1951,7 @@ class LightCTLClient(Model):
                 app_index=0,
                 destination=None,
                 opcode=status_opcode,
-                params=dict(),
+                params={},
             )
             for node in nodes
         }
@@ -1981,7 +1983,7 @@ class LightCTLClient(Model):
                 node,
                 app_index=app_index,
                 opcode=LightCTLOpcode.LIGHT_CTL_TEMPERATURE_SET,
-                params=dict(ctl_temperature=ctl_temperature, ctl_delta_uv=0, tid=self.tid()),
+                params={"ctl_temperature": ctl_temperature, "ctl_delta_uv": 0, "tid": self.tid()},
             )
             for node in nodes
         }
@@ -1994,7 +1996,7 @@ class LightCTLClient(Model):
                 app_index=0,
                 destination=None,
                 opcode=status_opcode,
-                params=dict(),
+                params={},
             )
             for node in nodes
         }
@@ -2020,7 +2022,7 @@ class GatewayConfigServer(Model):
     PUBLISH = True
     SUBSCRIBE = True
 
-    def send_configuration_status(
+    def send_configuration_status(  # pylint: disable=too-many-arguments, disable=too-many-positional-arguments
         self,
         destination: int,
         net_index: int,
@@ -2035,23 +2037,23 @@ class GatewayConfigServer(Model):
         netmask: int,
         dhcp: DhcpFlag,
     ):
-        params = dict(
-            subopcode=GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
-            payload=dict(
-                chip_revision_id=chip_rev_id,
-                mtu_size=mtu,
-                mac_addr=mac,
-                server_port_number=server[1],
-                reconnect_interval=reconnect,
-                server_address_length=len(server[0]),
-                server_address=server[0],
-                dns_ip_address=dns,
-                ip_addr=ip,
-                gateway_ip_addr=gateway,
-                netmask=netmask,
-                flags=dhcp,
-            ),
-        )
+        params = {
+            "subopcode": GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
+            "payload": {
+                "chip_revision_id": chip_rev_id,
+                "mtu_size": mtu,
+                "mac_addr": mac,
+                "server_port_number": server[1],
+                "reconnect_interval": reconnect,
+                "server_address_length": len(server[0]),
+                "server_address": server[0],
+                "dns_ip_address": dns,
+                "ip_addr": ip,
+                "gateway_ip_addr": gateway,
+                "netmask": netmask,
+                "flags": dhcp,
+            },
+        }
         self.send_dev(destination, net_index, GatewayConfigServerOpcode.SILVAIR_GATEWAY, params)
 
     def send_packets_status(
@@ -2063,15 +2065,15 @@ class GatewayConfigServer(Model):
         bandwidth: int,
         state: BitStruct(),
     ):
-        params = dict(
-            subopcode=GatewayConfigServerSubOpcode.GATEWAY_PACKETS_STATUS,
-            payload=dict(
-                total_eth_rx_errors=rx_errors,
-                total_eth_tx_errors=tx_errors,
-                bandwidth=bandwidth,
-                connection_state=state,
-            ),
-        )
+        params = {
+            "subopcode": GatewayConfigServerSubOpcode.GATEWAY_PACKETS_STATUS,
+            "payload": {
+                "total_eth_rx_errors": rx_errors,
+                "total_eth_tx_errors": tx_errors,
+                "bandwidth": bandwidth,
+                "connection_state": state,
+            },
+        }
         self.send_dev(destination, net_index, GatewayConfigServerOpcode.SILVAIR_GATEWAY, params)
 
 
@@ -2089,23 +2091,23 @@ class GatewayConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_GET,
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_GET,
+            },
         )
 
         status = self.expect_dev(
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
-                payload=...,
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
+                "payload": ...,
+            },
         )
         return await self.query(request, status, timeout=1.0)
 
-    async def configuration_set(
+    async def configuration_set(  # pylint: disable=too-many-arguments, disable=too-many-positional-arguments
         self,
         destination: int,
         net_index: int,
@@ -2118,29 +2120,29 @@ class GatewayConfigClient(Model):
         gateway: Optional[str] = None,
         netmask: Optional[int] = None,
     ):
-        payload = dict(
-            mtu_size=mtu,
-            mac_address=mac,
-            server_port_number=server[1],
-            reconnect_interval=reconnect,
-            server_address_length=len(server[0]),
-            server_address=server[0],
-        )
+        payload = {
+            "mtu_size": mtu,
+            "mac_address": mac,
+            "server_port_number": server[1],
+            "reconnect_interval": reconnect,
+            "server_address_length": len(server[0]),
+            "server_address": server[0],
+        }
 
         if dns:
             payload.update(
-                dict(
-                    dns_ip_address=dns,
-                )
+                {
+                    "dns_ip_address": dns,
+                }
             )
 
         if ip and gateway and netmask:
             payload.update(
-                dict(
-                    ip_address=ip,
-                    gateway_ip_address=gateway,
-                    netmask=netmask,
-                )
+                {
+                    "ip_address": ip,
+                    "gateway_ip_address": gateway,
+                    "netmask": netmask,
+                }
             )
 
         request = partial(
@@ -2148,20 +2150,20 @@ class GatewayConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_SET,
-                payload=payload,
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_SET,
+                "payload": payload,
+            },
         )
 
         status = self.expect_dev(
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
-                payload=...,
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
+                "payload": ...,
+            },
         )
         return await self.query(request, status, timeout=1.0)
 
@@ -2171,18 +2173,18 @@ class GatewayConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.GATEWAY_PACKETS_GET,
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.GATEWAY_PACKETS_GET,
+            },
         )
 
         status = self.expect_dev(
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.GATEWAY_PACKETS_STATUS,
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.GATEWAY_PACKETS_STATUS,
+            },
         )
         return await self.query(request, status, timeout=1.0)
 
@@ -2192,19 +2194,19 @@ class GatewayConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.GATEWAY_PACKETS_CLEAR,
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.GATEWAY_PACKETS_CLEAR,
+            },
         )
 
         status = self.expect_dev(
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.GATEWAY_PACKETS_STATUS,
-                payload=...,
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.GATEWAY_PACKETS_STATUS,
+                "payload": ...,
+            },
         )
         return await self.query(request, status, timeout=1.0)
 
@@ -2214,20 +2216,20 @@ class GatewayConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.MTU_SIZE_SET,
-                payload=dict(mtu_size=mtu),
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.MTU_SIZE_SET,
+                "payload": {"mtu_size": mtu},
+            },
         )
 
         status = self.expect_dev(
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
-                payload=...,
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
+                "payload": ...,
+            },
         )
         return await self.query(request, status, timeout=1.0)
 
@@ -2237,20 +2239,20 @@ class GatewayConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.ETHERNET_MAC_ADDRESS_SET,
-                payload=dict(mac_address=mac),
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.ETHERNET_MAC_ADDRESS_SET,
+                "payload": {"mac_address": mac},
+            },
         )
 
         status = self.expect_dev(
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
-                payload=...,
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
+                "payload": ...,
+            },
         )
         return await self.query(request, status, timeout=1.0)
 
@@ -2265,24 +2267,24 @@ class GatewayConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.SERVER_ADDRESS_AND_PORT_NUMBER_SET,
-                payload=dict(
-                    server_port_number=server[1],
-                    server_address_length=len(server[0]),
-                    server_address=server[0],
-                ),
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.SERVER_ADDRESS_AND_PORT_NUMBER_SET,
+                "payload": {
+                    "server_port_number": server[1],
+                    "server_address_length": len(server[0]),
+                    "server_address": server[0],
+                },
+            },
         )
 
         status = self.expect_dev(
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
-                payload=...,
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
+                "payload": ...,
+            },
         )
         return await self.query(request, status, timeout=1.0)
 
@@ -2292,20 +2294,20 @@ class GatewayConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.RECONNECT_INTERVAL_SET,
-                payload=dict(reconnect_interval=reconnect),
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.RECONNECT_INTERVAL_SET,
+                "payload": {"reconnect_interval": reconnect},
+            },
         )
 
         status = self.expect_dev(
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
-                payload=...,
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
+                "payload": ...,
+            },
         )
         return await self.query(request, status, timeout=1.0)
 
@@ -2315,20 +2317,20 @@ class GatewayConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.DNS_IP_ADDRESS_SET,
-                payload=dict(dns_ip_address=dns),
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.DNS_IP_ADDRESS_SET,
+                "payload": {"dns_ip_address": dns},
+            },
         )
 
         status = self.expect_dev(
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
-                payload=...,
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
+                "payload": ...,
+            },
         )
         return await self.query(request, status, timeout=1.0)
 
@@ -2338,20 +2340,20 @@ class GatewayConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.IP_ADDRESS_SET,
-                payload=dict(ip_address=ip),
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.IP_ADDRESS_SET,
+                "payload": {"ip_address": ip},
+            },
         )
 
         status = self.expect_dev(
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
-                payload=...,
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
+                "payload": ...,
+            },
         )
         return await self.query(request, status, timeout=1.0)
 
@@ -2361,20 +2363,20 @@ class GatewayConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.GATEWAY_IP_ADDRESS_SET,
-                payload=dict(gateway_ip_address=gateway),
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.GATEWAY_IP_ADDRESS_SET,
+                "payload": {"gateway_ip_address": gateway},
+            },
         )
 
         status = self.expect_dev(
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
-                payload=...,
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
+                "payload": ...,
+            },
         )
         return await self.query(request, status, timeout=1.0)
 
@@ -2384,20 +2386,20 @@ class GatewayConfigClient(Model):
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.NETMASK_SET,
-                payload=dict(netmask=netmask),
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.NETMASK_SET,
+                "payload": {"netmask": netmask},
+            },
         )
 
         status = self.expect_dev(
             destination,
             net_index=net_index,
             opcode=GatewayConfigServerOpcode.SILVAIR_GATEWAY,
-            params=dict(
-                subopcode=GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
-                payload=...,
-            ),
+            params={
+                "subopcode": GatewayConfigServerSubOpcode.GATEWAY_CONFIGURATION_STATUS,
+                "payload": ...,
+            },
         )
         return await self.query(request, status, timeout=1.0)
 
@@ -2426,10 +2428,10 @@ class LightExtendedControllerSetupClient(Model):
                 node,
                 net_index=net_index,
                 opcode=LightExtendedControllerOpcode.SILVAIR_LEC,
-                params=dict(
-                    subopcode=LightExtendedControllerSubOpcode.PROPERTY_GET,
-                    payload=dict(id=property_id),
-                ),
+                params={
+                    "subopcode": LightExtendedControllerSubOpcode.PROPERTY_GET,
+                    "payload": {"id": property_id},
+                },
             )
             for node in nodes
         }
@@ -2439,10 +2441,10 @@ class LightExtendedControllerSetupClient(Model):
                 node,
                 net_index=net_index,
                 opcode=LightExtendedControllerOpcode.SILVAIR_LEC,
-                params=dict(
-                    subopcode=LightExtendedControllerSubOpcode.PROPERTY_STATUS,
-                    payload=dict(id=property_id),
-                ),
+                params={
+                    "subopcode": LightExtendedControllerSubOpcode.PROPERTY_STATUS,
+                    "payload": {"id": property_id},
+                },
             )
             for node in nodes
         }
@@ -2459,7 +2461,7 @@ class LightExtendedControllerSetupClient(Model):
 
                 if inspect.isawaitable(aw):
                     await aw
-            except Exception as ex:
+            except Exception as ex:  # pylint: disable=broad-exception-caught
                 self.logger.warning("Callback failed for addr %s: %s", address, ex)
 
         results = await self.bulk_query(
@@ -2552,7 +2554,7 @@ class TimeClient(Model):
                 node,
                 app_index=app_index,
                 opcode=TimeOpcode.TIME_GET,
-                params=dict(),
+                params={},
             )
             for node in nodes
         }
@@ -2565,7 +2567,7 @@ class TimeClient(Model):
                 app_index=0,
                 destination=None,
                 opcode=status_opcode,
-                params=dict(),
+                params={},
             )
             for node in nodes
         }
@@ -2588,7 +2590,7 @@ class TimeClient(Model):
                 node,
                 app_index=app_index,
                 opcode=TimeOpcode.TIME_ROLE_GET,
-                params=dict(),
+                params={},
             )
             for node in nodes
         }
@@ -2601,7 +2603,7 @@ class TimeClient(Model):
                 app_index=0,
                 destination=None,
                 opcode=status_opcode,
-                params=dict(),
+                params={},
             )
             for node in nodes
         }
@@ -2631,12 +2633,12 @@ class TimeClient(Model):
                 node,
                 app_index=app_index,
                 opcode=TimeOpcode.TIME_SET,
-                params=dict(
-                    date=date,
-                    uncertainty=uncertainty,
-                    time_authority=time_authority,
-                    tai_utc_delta=tai_utc_delta,
-                ),
+                params={
+                    "date": date,
+                    "uncertainty": uncertainty,
+                    "time_authority": time_authority,
+                    "tai_utc_delta": tai_utc_delta,
+                },
             )
             for node in nodes
         }
@@ -2649,7 +2651,7 @@ class TimeClient(Model):
                 app_index=0,
                 destination=None,
                 opcode=status_opcode,
-                params=dict(),
+                params={},
             )
             for node in nodes
         }
@@ -2671,7 +2673,7 @@ class TimeClient(Model):
                 node,
                 app_index=app_index,
                 opcode=TimeOpcode.TIME_ROLE_SET,
-                params=dict(time_role=time_role),
+                params={"time_role": time_role},
             )
             for node in nodes
         }
@@ -2684,7 +2686,7 @@ class TimeClient(Model):
                 app_index=0,
                 destination=None,
                 opcode=status_opcode,
-                params=dict(),
+                params={},
             )
             for node in nodes
         }

@@ -19,6 +19,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 #
+# pylint: disable=too-many-lines
+
 """
 This module provides a high-level API for BlueZ mesh stack.
 
@@ -28,6 +30,7 @@ This module provides a high-level API for BlueZ mesh stack.
 import asyncio
 import logging
 import struct
+from abc import ABC, abstractmethod
 from enum import Enum
 from functools import lru_cache, partial
 from os import urandom
@@ -156,7 +159,7 @@ class MachineUUIDMixin(PathMixin):
 
     @staticmethod
     def get_namespace():
-        with open("/etc/machine-id") as machine_id:
+        with open("/etc/machine-id", encoding="utf-8") as machine_id:
             return UUID(machine_id.read().strip())
 
     @property
@@ -181,8 +184,9 @@ class TokenRingMixin(MachineUUIDMixin):
         return self.TOKEN_RING(uuid=self.uuid)
 
 
-class NetworkKeyMixin:
+class NetworkKeyMixin(ABC):
     @property
+    @abstractmethod
     def primary_net_key(self) -> Tuple[int, NetworkKey]:
         """
         Index and key of the network that the application belongs to. Used when
@@ -191,6 +195,7 @@ class NetworkKeyMixin:
         raise NotImplementedError("Getting primary network key should be overridden!")
 
     @property
+    @abstractmethod
     def subnet_keys(self) -> List[Tuple[int, NetworkKey]]:
         """
         Indexes and keys of the subnets.
@@ -265,6 +270,7 @@ class ApplicationKeyMixin(NetworkKeyMixin):
         raise IndexError("Primary application key not found")
 
     @property
+    @abstractmethod
     def app_keys(self) -> List[Tuple[int, int, ApplicationKey]]:
         """
         Indexes, bound network key indexes, and application keys.
@@ -286,7 +292,7 @@ class DBusMixin:
     DBUS_SERVICE = None
     logger: logging.Logger
 
-    def _name_owner_changed(self, name, old_owner, new_owner) -> None:
+    def _name_owner_changed(self, name, old_owner, _new_owner) -> None:
         if name != self.DBUS_SERVICE.NAME:
             return
 
@@ -316,7 +322,7 @@ class DBusMixin:
     async def dbus_connected(self, owner) -> None:
         pass
 
-    def dbus_disconnected(self, owner) -> Any:
+    def dbus_disconnected(self, _owner) -> Any:
         self.loop.stop()
 
     async def __aenter__(self) -> "DBusMixin":
@@ -327,11 +333,12 @@ class DBusMixin:
         return await self.dbus_disconnect()
 
 
-class ProvisioningMixin:
+class ProvisioningMixin(ABC):
     CAPABILITIES = []
     OOBINFO = []
     URI = ""
 
+    @abstractmethod
     def private_key(self) -> bytes:
         """
         This method is called during provisioning if the Provisioner
@@ -343,6 +350,7 @@ class ProvisioningMixin:
         """
         raise NotImplementedError("Getting private key should be overridden!")
 
+    @abstractmethod
     def public_key(self) -> bytes:
         """
         This method is called during provisioning if the local device is
@@ -353,6 +361,7 @@ class ProvisioningMixin:
         """
         raise NotImplementedError("Getting public key should be overridden!")
 
+    @abstractmethod
     def display_string(self, value: str):
         """
         This method is called when the Daemon has something important for the Agent to Display,
@@ -362,27 +371,30 @@ class ProvisioningMixin:
         """
         raise NotImplementedError("Display functions should be overridden!")
 
-    def display_numeric(self, type: str, number: int):
+    @abstractmethod
+    def display_numeric(self, kind: str, number: int):
         """
         This method is called when the Daemon has something important
         for the Agent to Display, but does not require any additional
         input locally.
-        :param type: String
+        :param kind: String
         :param value: Integer
         :return:
         """
         raise NotImplementedError("Display functions should be overridden!")
 
-    def prompt_static(self, type: str) -> bytes:
+    @abstractmethod
+    def prompt_static(self, kind: str) -> bytes:
         """
         This method is called when the Daemon requires a 16 octet byte
         array, as an Out-of-Band authentication.
-        :param type:
+        :param kind:
         :return:
         """
         raise NotImplementedError("Prompt functions should be overridden!")
 
-    def prompt_numeric(self, type: str) -> int:
+    @abstractmethod
+    def prompt_numeric(self, kind: str) -> int:
         """
         This method is called when the Daemon requests the user to
         enter a decimal value between 1-99999999.
@@ -391,6 +403,7 @@ class ProvisioningMixin:
         """
         raise NotImplementedError("Prompt functions should be overridden!")
 
+    @abstractmethod
     def cancel(self):
         """
         This method gets called by the daemon to cancel any existing
@@ -427,19 +440,22 @@ class ProvisioningMixin:
         return self.URI
 
 
-class ProvisionerMixin:
+class ProvisionerMixin(ABC):
+    @abstractmethod
     def scan_result(self, rssi: int, data: bytes, options: dict):
         """
         The method is called from the bluetooth-meshd daemon when a
         unique UUID has been seen during UnprovisionedScan() for
         unprovsioned devices.
-        :param rssi: signed, normalized measurement of the signal strength of the recieved unprovisioned beacon
+        :param rssi: signed, normalized measurement of the signal
+                     strength of the received unprovisioned beacon
         :param data:
         :param options:
         :return:
         """
         raise NotImplementedError("Provisioner functions should be overridden!")
 
+    @abstractmethod
     def request_prov_data(self, count: int) -> Tuple[int, int]:
         """
         This method is implemented by a Provisioner capable application
@@ -453,18 +469,21 @@ class ProvisionerMixin:
         """
         raise NotImplementedError("Provisioner functions should be overridden!")
 
+    @abstractmethod
     def add_node_complete(self, uuid: bytes, unicast: int, count: int):
         """
         This method is called when the node provisioning initiated
         by an AddNode() method call successfully completed.
 
         :param uuid: 16 byte remote device UUID
-        :param unicast: primary address that has been assigned to the new node, and the address of it's config server
+        :param unicast: primary address that has been assigned to the new node,
+                        and the address of it's config server
         :param count: number of unicast addresses assigned to the new node
         :return:
         """
         raise NotImplementedError("Provisioner functions should be overridden!")
 
+    @abstractmethod
     def add_node_failed(self, uuid: bytes, reason: str):
         """
         This method is called when the node provisioning initiated by
@@ -479,7 +498,7 @@ class ProvisionerMixin:
         raise NotImplementedError("Provisioner functions should be overridden!")
 
 
-class Application(
+class Application(  # pylint: disable=too-many-instance-attributes, disable=too-many-ancestors, disable=too-many-public-methods
     CompositionDataMixin,
     TokenRingMixin,
     MachineUUIDMixin,
@@ -492,6 +511,7 @@ class Application(
     ProvisionerMixin,
     AddressMixin,
     IvIndexMixin,
+    ABC,
 ):
     """
     Base class for mesh applications.
@@ -527,7 +547,7 @@ class Application(
             self.logger.warning("TCP interface missing")
             raise NotImplementedError
 
-        path = "%s/%s" % (self.DBUS_SERVICE.PATH, tcp_server[0])
+        path = f"{self.DBUS_SERVICE.PATH}/{tcp_server[0]}"
         introspection = await self.bus.introspect(MeshService.NAME, path)
         acl_service = self.bus.get_proxy_object(MeshService.NAME, path, introspection)
 
@@ -563,7 +583,6 @@ class Application(
         super().dbus_disconnected(owner)
 
     def _register(self):
-        # pylint: disable=W0212
         self.logger.info("Registering application")
 
         self.bus.export(self.path, self.application_interface)
@@ -578,7 +597,6 @@ class Application(
             self.bus.export(element.path, element_interface)
 
     def _unregister(self):
-        # pylint: disable=W0212
         self.logger.info("Unregistering application")
 
         for element in self.elements.values():
@@ -768,12 +786,15 @@ class Application(
         await self.network_interface.create_network("/", self.uuid)
         return await self._join_complete
 
-    async def cancel(self):
+    async def _cancel(self):
         """
         Cancel outstanding :py:func:`join` request.
         """
         self.logger.info("Cancel")
         await self.network_interface.cancel()
+
+    def cancel(self):
+        return self.loop.create_task(self._cancel())
 
     async def leave(self):
         """
@@ -860,8 +881,8 @@ class Application(
                     element,
                     app_index,
                     net_index,
-                    ttl,
-                    label,
+                    _ttl,
+                    _label,
                     _,
                 ) = HEADER.unpack(header)
 
@@ -894,10 +915,10 @@ class Application(
             "(updating)" if self.iv_update else "",
         )
 
-        flags = dict(
-            IvUpdate=dbus_next.Variant("b", self.iv_update),
-            KeyRefresh=dbus_next.Variant("b", key_refresh),
-        )
+        flags = {
+            "IvUpdate": dbus_next.Variant("b", self.iv_update),
+            "KeyRefresh": dbus_next.Variant("b", key_refresh),
+        }
 
         self._join_complete = JoinComplete(
             partial(self._join_callback, join_callback=join_callback), asyncio.Future()
@@ -915,7 +936,7 @@ class Application(
         return await self._join_complete.future
 
     def join_complete(self, token: int):
-        def join_complete_result(f: asyncio.Future):
+        def join_complete_result(_f: asyncio.Future):
             try:
                 self._join_complete.future.set_result(token)
             except Exception as ex:
@@ -954,19 +975,17 @@ class Element(LocationMixin):
     def __init__(self, application: Application, index: int):
         super().__init__()
 
-        self.logger = application.logger.getChild("Element%d" % index)  # type: logging.Logger
+        self.logger = application.logger.getChild(f"Element{index}")  # type: logging.Logger
         self.application = application
         self.index = index
-        self.path = "%s/element%d" % (self.application.path, index)
+        self.path = f"{self.application.path}/element{index}"
 
         for opcode in sum((list(model.OPCODES) for model in self.MODELS), []):
             models = [model for model in self.MODELS if opcode in model.OPCODES]
 
-            assert len(models) == 1, "Element #%d declares models %r with overlapping opcode %r" % (
-                index,
-                models,
-                opcode,
-            )
+            assert (
+                len(models) == 1
+            ), f"Element #{index} declares models {models!r} with overlapping opcode {opcode!r}"
 
         self._models = {
             model_class: model_class(self) for model_class in self.MODELS
@@ -993,12 +1012,14 @@ class Element(LocationMixin):
                 data.hex(),
                 ex,
             )
-            return
+            return None
 
         for model in self._models.values():
             if message["opcode"] in model.OPCODES:
                 model.message_received(source, app_index, destination, message)
-                return
+                return None
+
+        return None
 
     def dev_key_message_received(self, source: int, remote: bool, net_index: int, data: bytes):
         """
@@ -1020,12 +1041,14 @@ class Element(LocationMixin):
                 data.hex(),
                 ex,
             )
-            return
+            return None
 
         for model in self._models.values():
             if message["opcode"] in model.OPCODES:
                 model.dev_key_message_received(source, remote, net_index, message)
-                return
+                return None
+
+        return None
 
     def update_model_configuration(
         self, model_id: Tuple[Optional[int], int], configuration: Mapping[str, Any]
@@ -1042,6 +1065,8 @@ class Element(LocationMixin):
                 model_config = ModelConfig(**configuration)
                 model.update_configuration(model_config)
                 return model_config
+
+        return None
 
     def __getitem__(self, model_class: Type["Model"]) -> "Model":
         return self._models[model_class]
@@ -1073,11 +1098,8 @@ class Element(LocationMixin):
     def __repr__(self):
         def model_name(cls):
             if cls.MODEL_ID[0] is None:
-                return "<%s %04x>" % (cls.__name__, cls.MODEL_ID[1])
+                return f"<{cls.__name__} {cls.MODEL_ID[1]:04x}>"
 
-            return "<%s %04x%04x>" % (cls.__name__, *cls.MODEL_ID)
+            return f"<{cls.__name__} {cls.MODEL_ID[0]:04x}{cls.MODEL_ID[1]:04x}>"
 
-        return "<%s: models=%s>" % (
-            type(self).__name__,
-            ", ".join(model_name(i) for i in self.MODELS),
-        )
+        return f"<{type(self).__name__}: models={', '.join(model_name(i) for i in self.MODELS)}>"
