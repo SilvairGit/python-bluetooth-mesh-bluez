@@ -22,22 +22,10 @@
 import asyncio
 import inspect
 from collections import defaultdict
+from collections.abc import Awaitable, Callable, Hashable, Mapping, Sequence
 from contextlib import suppress
 from datetime import timedelta
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Awaitable,
-    Callable,
-    Hashable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from bluetooth_mesh.bluez.utils import (
@@ -48,14 +36,11 @@ from bluetooth_mesh.bluez.utils import (
     construct_match,
 )
 from bluetooth_mesh.messages import AccessMessage
+from bluetooth_mesh.network.crypto import ApplicationKey
 
 if TYPE_CHECKING:
-    from bluetooth_mesh.bluez.application import (
-        ApplicationKey,
-        Element,
-        ModelBindStatus,
-        ModelSubscriptionStatus,
-    )
+    from bluetooth_mesh.bluez.application import Element
+    from bluetooth_mesh.bluez.models import ModelBindStatus, ModelSubscriptionStatus
 
 __all__ = [
     "Model",
@@ -68,20 +53,20 @@ class Model:
     Base class for mesh models.
     """
 
-    MODEL_ID = (None, None)  # type: Tuple[Optional[int], int]
-    OPCODES = []  # type: List[int]
-    PUBLISH = False  # type: bool
-    SUBSCRIBE = False  # type: bool
+    MODEL_ID: tuple[int | None, int | None] = (None, None)
+    OPCODES: list[int] = []
+    PUBLISH: bool = False
+    SUBSCRIBE: bool = False
 
-    def __init__(self, element: "Element"):
+    def __init__(self, element: Element):
         self.__tid = 0
         self.element = element
 
         self.logger = self.element.logger.getChild(f"{type(self).__name__}")
 
-        self.app_message_callbacks = defaultdict(set)  # type: Dict[int, Set[Callable]]
-        self.dev_message_callbacks = defaultdict(set)  # type: Dict[int, Set[Callable]]
-        self.subscription_callbacks = defaultdict(set)  # type: Dict[Union[int, UUID], Set]
+        self.app_message_callbacks: dict[int, set[Callable]] = defaultdict(set)
+        self.dev_message_callbacks: dict[int, set[Callable]] = defaultdict(set)
+        self.subscription_callbacks: dict[int | UUID, set] = defaultdict(set)
 
         assert self.MODEL_ID[1] is not None, "A model has to have ID!"
         self.configuration = ModelConfig(bindings=[], subscriptions=[])
@@ -101,7 +86,7 @@ class Model:
     def _node_interface(self):
         return self.element.application.node_interface
 
-    def update_configuration(self, configuration: "ModelConfig"):
+    def update_configuration(self, configuration: ModelConfig):
         if configuration.bindings is not None:
             self.configuration.bindings = configuration.bindings
 
@@ -117,7 +102,7 @@ class Model:
         self,
         source: int,
         app_index: int,
-        destination: Union[int, UUID],
+        destination: int | UUID,
         message: ParsedMeshMessage,
     ):
         self.logger.debug(
@@ -163,7 +148,7 @@ class Model:
         self,
         source: int,
         app_index: int,
-        destination: Optional[Union[int, UUID]],
+        destination: int | UUID | None,
         opcode: int,
         params: MessageDescription,
     ) -> asyncio.Future:
@@ -197,7 +182,7 @@ class Model:
         def app_message_received(
             _source: int,
             _app_index: int,
-            _destination: Union[int, UUID],
+            _destination: int | UUID,
             message: ParsedMeshMessage,
         ):
             if (_source != source) or (_app_index != app_index):
@@ -394,7 +379,7 @@ class Model:
         statuses: Mapping[Hashable, asyncio.Future],
         *,
         send_interval: float = 0.5,
-        progress_callback: Optional[ProgressCallback] = None,
+        progress_callback: ProgressCallback | None = None,
         timeout: float = 5.0,
     ) -> Mapping[Hashable, Any]:
         """
@@ -446,10 +431,10 @@ class Model:
 
     async def subscribe(
         self,
-        app_keys: Sequence[Tuple[int, int, "ApplicationKey"]],
+        app_keys: Sequence[tuple[int, int, ApplicationKey]],
         subscription_address: int,
-        callback: Callable[[int, Union[int, UUID], int, ParsedMeshMessage], None],
-    ) -> "ModelSubscriptionStatus":
+        callback: Callable[[int, int | UUID, int, ParsedMeshMessage], None],
+    ) -> ModelSubscriptionStatus:
         """
         Subscribe to messages sent to `subscription_address` and encrypted with
         either of application keys
@@ -487,9 +472,9 @@ class Model:
 
     async def unsubscribe(
         self,
-        subscription_address: Optional[int] = None,
-        callback: Optional[Callable[[int, Union[int, UUID], int, ParsedMeshMessage], None]] = None,
-    ) -> "ModelSubscriptionStatus":
+        subscription_address: int | None = None,
+        callback: Callable[[int, int | UUID, int, ParsedMeshMessage], None] | None = None,
+    ) -> ModelSubscriptionStatus:
         """
         Unubscribe from messages sent to `subscription_address`, or clear
         subscriptions if `subscription_address` is not provided.
@@ -519,7 +504,7 @@ class Model:
 
         return await self.element.application.unsubscribe_model(subscription_address, model=self)
 
-    async def bind(self, app_key_index: int) -> "ModelBindStatus":
+    async def bind(self, app_key_index: int) -> ModelBindStatus:
         """
         Bind to application key with index `app_key_index`.
 
@@ -544,9 +529,9 @@ class ModelConfig:
 
     def __init__(
         self,
-        bindings: Optional[List[int]] = None,
-        publication_period: Optional[timedelta] = None,
-        subscriptions: Optional[Set[Union[int, UUID]]] = None,
+        bindings: list[int] | None = None,
+        publication_period: timedelta | None = None,
+        subscriptions: set[int | UUID] | None = None,
     ):
         self.bindings = bindings
         self.publication_period = publication_period

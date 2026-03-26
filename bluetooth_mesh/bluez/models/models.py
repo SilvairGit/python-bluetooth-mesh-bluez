@@ -25,9 +25,10 @@ This module implements mesh models, both clients and servers.
 """
 
 import inspect
+from collections.abc import Iterable, Sequence
 from datetime import datetime, timedelta
 from functools import partial
-from typing import Any, Dict, Iterable, NamedTuple, Optional, Sequence, Tuple, Type
+from typing import Any, NamedTuple
 
 from construct import BitStruct
 
@@ -116,7 +117,7 @@ ModelBindStatus = NamedTuple(
     [
         ("element_address", int),
         ("app_key_index", int),
-        ("model", Type[Model]),
+        ("model", type[Model]),
     ],
 )
 
@@ -125,7 +126,7 @@ ModelSubscriptionStatus = NamedTuple(
     [
         ("element_address", int),
         ("subscription_address", int),
-        ("model", Type[Model]),
+        ("model", type[Model]),
     ],
 )
 
@@ -133,7 +134,7 @@ ModelSubscriptionList = NamedTuple(
     "ModelSubscriptionList",
     [
         ("element_address", int),
-        ("model", Type[Model]),
+        ("model", type[Model]),
         ("addresses", Sequence[int]),
     ],
 )
@@ -147,7 +148,7 @@ ModelPublicationStatus = NamedTuple(
         ("app_key_index", int),
         ("period", timedelta),
         ("retransmissions", Any),
-        ("model", Type[Model]),
+        ("model", type[Model]),
     ],
 )
 
@@ -203,9 +204,9 @@ class ConfigClient(Model):  # pylint: disable=too-many-public-methods
         status: dict,
         *,
         send_interval: float = 1.0,
-        progress_callback: Optional[ProgressCallback] = None,
-        timeout: Optional[float] = None,
-    ) -> Dict[int, Optional[Any]]:
+        progress_callback: ProgressCallback | None = None,
+        timeout: float | None = None,
+    ) -> dict[int, Any | None]:
         requests = {
             node: partial(
                 self.send_dev,
@@ -259,8 +260,8 @@ class ConfigClient(Model):  # pylint: disable=too-many-public-methods
         nodes: Sequence[int],
         net_index: int,
         send_interval: float = 2.0,
-        progress_callback: Optional[ProgressCallback] = None,
-        timeout: Optional[float] = None,
+        progress_callback: ProgressCallback | None = None,
+        timeout: float | None = None,
     ) -> CompositionDataPage0:
         return await self.get_param(
             nodes,
@@ -287,9 +288,9 @@ class ConfigClient(Model):  # pylint: disable=too-many-public-methods
         nodes: Sequence[int],
         net_index: int,
         send_interval: float = 0.1,
-        progress_callback: Optional[ProgressCallback] = None,
-        timeout: Optional[float] = None,
-    ) -> Dict[int, Optional[Any]]:
+        progress_callback: ProgressCallback | None = None,
+        timeout: float | None = None,
+    ) -> dict[int, Any | None]:
         return await self.get_param(
             nodes,
             net_index,
@@ -305,9 +306,9 @@ class ConfigClient(Model):  # pylint: disable=too-many-public-methods
         nodes: Sequence[int],
         net_index: int,
         send_interval: float = 0.1,
-        progress_callback: Optional[ProgressCallback] = None,
-        timeout: Optional[float] = None,
-    ) -> Dict[int, Optional[Any]]:
+        progress_callback: ProgressCallback | None = None,
+        timeout: float | None = None,
+    ) -> dict[int, Any | None]:
         return await self.get_param(
             nodes,
             net_index,
@@ -324,9 +325,9 @@ class ConfigClient(Model):  # pylint: disable=too-many-public-methods
         net_index: int,
         net_key_index: int,
         send_interval: float = 0.1,
-        progress_callback: Optional[ProgressCallback] = None,
-        timeout: Optional[float] = None,
-    ) -> Dict[int, Optional[Any]]:
+        progress_callback: ProgressCallback | None = None,
+        timeout: float | None = None,
+    ) -> dict[int, Any | None]:
         return await self.get_param(
             nodes,
             net_index,
@@ -534,7 +535,7 @@ class ConfigClient(Model):  # pylint: disable=too-many-public-methods
         net_index: int,
         element_address: int,
         app_key_index: int,
-        model: Type[Model],
+        model: type[Model],
     ) -> ModelBindStatus:
         status_opcode = ConfigOpcode.CONFIG_MODEL_APP_STATUS
         params_name = status_opcode.name.lower()
@@ -573,7 +574,7 @@ class ConfigClient(Model):  # pylint: disable=too-many-public-methods
             model,
         )
 
-    async def get_network_transmission(self, destination: int, net_index: int) -> Tuple[int, int]:
+    async def get_network_transmission(self, destination: int, net_index: int) -> tuple[int, int]:
         status_opcode = ConfigOpcode.CONFIG_NETWORK_TRANSMIT_STATUS
         params_name = status_opcode.name.lower()
 
@@ -597,7 +598,7 @@ class ConfigClient(Model):  # pylint: disable=too-many-public-methods
 
     async def set_network_transmission(
         self, destination: int, net_index: int, interval: int, count: int
-    ) -> Tuple[int, int]:
+    ) -> tuple[int, int]:
         status_opcode = ConfigOpcode.CONFIG_NETWORK_TRANSMIT_STATUS
         params_name = status_opcode.name.lower()
 
@@ -658,7 +659,7 @@ class ConfigClient(Model):  # pylint: disable=too-many-public-methods
         net_index: int,
         element_address: int,
         subscription_address: int,
-        model: Type[Model],
+        model: type[Model],
     ) -> ModelSubscriptionStatus:
         status_opcode = ConfigOpcode.CONFIG_MODEL_SUBSCRIPTION_STATUS
         params_name = status_opcode.name.lower()
@@ -703,7 +704,7 @@ class ConfigClient(Model):  # pylint: disable=too-many-public-methods
         net_index: int,
         element_address: int,
         subscription_address: int,
-        model: Type[Model],
+        model: type[Model],
     ) -> ModelSubscriptionStatus:
         status_opcode = ConfigOpcode.CONFIG_MODEL_SUBSCRIPTION_STATUS
         params_name = status_opcode.name.lower()
@@ -743,7 +744,7 @@ class ConfigClient(Model):  # pylint: disable=too-many-public-methods
         )
 
     async def clear_subscriptions(
-        self, destination: int, net_index: int, element_address: int, model: Type[Model]
+        self, destination: int, net_index: int, element_address: int, model: type[Model]
     ) -> ModelSubscriptionStatus:
         status_opcode = ConfigOpcode.CONFIG_MODEL_SUBSCRIPTION_STATUS
         params_name = status_opcode.name.lower()
@@ -782,7 +783,7 @@ class ConfigClient(Model):  # pylint: disable=too-many-public-methods
         )
 
     async def get_subscriptions(
-        self, destination: int, net_index: int, element_address: int, model: Type[Model]
+        self, destination: int, net_index: int, element_address: int, model: type[Model]
     ) -> ModelSubscriptionList:
         if model.MODEL_ID[0] is not None:
             status_opcode = ConfigOpcode.CONFIG_VENDOR_MODEL_SUBSCRIPTION_LIST
@@ -826,7 +827,7 @@ class ConfigClient(Model):  # pylint: disable=too-many-public-methods
         )
 
     async def get_publication(
-        self, destination: int, net_index: int, element_address: int, model: Type[Model]
+        self, destination: int, net_index: int, element_address: int, model: type[Model]
     ) -> ModelPublicationStatus:
         status_opcode = ConfigOpcode.CONFIG_MODEL_PUBLICATION_STATUS
         params_name = status_opcode.name.lower()
@@ -875,7 +876,7 @@ class ConfigClient(Model):  # pylint: disable=too-many-public-methods
         element_address: int,
         publication_address: int,
         app_key_index: int,
-        model: Type[Model],
+        model: type[Model],
         ttl: int = 8,
         publish_step_resolution: PublishPeriodStepResolution = PublishPeriodStepResolution.RESOLUTION_10_S,
         publish_number_of_steps: int = 6,  # 60seconds
@@ -1081,9 +1082,9 @@ class DebugClient(Model):
         status: int,
         *,
         send_interval: float = 1.0,
-        progress_callback: Optional[ProgressCallback] = None,
-        timeout: Optional[float] = None,
-    ) -> Dict[int, Optional[Any]]:
+        progress_callback: ProgressCallback | None = None,
+        timeout: float | None = None,
+    ) -> dict[int, Any | None]:
         requests = {
             node: partial(
                 self.send_dev,
@@ -1133,7 +1134,7 @@ class DebugClient(Model):
             for node, result in results.items()
         }
 
-    async def get_uptime(self, nodes: Sequence[int], app_index: int) -> Dict[int, Optional[Any]]:
+    async def get_uptime(self, nodes: Sequence[int], app_index: int) -> dict[int, Any | None]:
         return await self.get_param(
             nodes,
             app_index,
@@ -1143,7 +1144,7 @@ class DebugClient(Model):
             timeout=len(nodes) * 0.5,
         )
 
-    async def get_last_sw_fault(self, nodes: Sequence[int], app_index: int) -> Dict[int, Optional[Any]]:
+    async def get_last_sw_fault(self, nodes: Sequence[int], app_index: int) -> dict[int, Any | None]:
         return await self.get_param(
             nodes,
             app_index,
@@ -1153,7 +1154,7 @@ class DebugClient(Model):
             timeout=len(nodes) * 0.5,
         )
 
-    async def get_firmware_version(self, nodes: Sequence[int], app_index: int) -> Dict[int, Optional[Any]]:
+    async def get_firmware_version(self, nodes: Sequence[int], app_index: int) -> dict[int, Any | None]:
         return await self.get_param(
             nodes,
             app_index,
@@ -1163,7 +1164,7 @@ class DebugClient(Model):
             timeout=len(nodes) * 0.5,
         )
 
-    async def get_app_version(self, nodes: Sequence[int], app_index: int) -> Dict[int, Optional[Any]]:
+    async def get_app_version(self, nodes: Sequence[int], app_index: int) -> dict[int, Any | None]:
         return await self.get_param(
             nodes,
             app_index,
@@ -1173,7 +1174,7 @@ class DebugClient(Model):
             timeout=len(nodes) * 0.5,
         )
 
-    async def get_ivindex(self, nodes: Sequence[int], app_index: int) -> Dict[int, Optional[Any]]:
+    async def get_ivindex(self, nodes: Sequence[int], app_index: int) -> dict[int, Any | None]:
         return await self.get_param(
             nodes,
             app_index,
@@ -1183,7 +1184,7 @@ class DebugClient(Model):
             timeout=len(nodes) * 0.5,
         )
 
-    async def get_system_stats(self, nodes: Sequence[int], app_index: int) -> Dict[int, Optional[Any]]:
+    async def get_system_stats(self, nodes: Sequence[int], app_index: int) -> dict[int, Any | None]:
         return await self.get_param(
             nodes,
             app_index,
@@ -1198,8 +1199,8 @@ class DebugClient(Model):
         nodes: Sequence[int],
         app_index: int,
         *,
-        progress_callback: Optional[ProgressCallback] = None,
-    ) -> Dict[int, Optional[Any]]:
+        progress_callback: ProgressCallback | None = None,
+    ) -> dict[int, Any | None]:
         requests = {
             node: partial(
                 self.send_dev,
@@ -1360,8 +1361,8 @@ class GenericOnOffClient(Model):
         app_index: int,
         *,
         send_interval: float = 0.1,
-        timeout: Optional[float] = None,
-    ) -> Dict[int, Optional[Any]]:
+        timeout: float | None = None,
+    ) -> dict[int, Any | None]:
         requests = {
             node: partial(
                 self.send_app,
@@ -1452,7 +1453,7 @@ class SceneClient(Model):
         app_index: int,
         *,
         send_interval: float = 0.1,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
     ):
         requests = {
             node: partial(
@@ -1607,8 +1608,8 @@ class LightLightnessClient(Model):
         max_lightness: int,
         *,
         send_interval: float = 0.1,
-        timeout: Optional[float] = None,
-    ) -> Optional[Any]:
+        timeout: float | None = None,
+    ) -> Any | None:
         request = partial(
             self.send_app,
             destination=destination,
@@ -1642,7 +1643,7 @@ class LightLightnessClient(Model):
         app_index: int,
         *,
         send_interval: float = 0.075,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
     ) -> None:
         requests = {
             node: partial(
@@ -1686,8 +1687,8 @@ class LightLightnessClient(Model):
         app_index: int,
         *,
         send_interval: float = 0.1,
-        timeout: Optional[float] = None,
-    ) -> Dict[int, Optional[Any]]:
+        timeout: float | None = None,
+    ) -> dict[int, Any | None]:
         requests = {
             node: partial(
                 self.send_app,
@@ -1765,8 +1766,8 @@ class LightLightnessClient(Model):
         *,
         _delay: float = 0.5,
         send_interval: float = 0.1,
-        timeout: Optional[float] = None,
-    ) -> Dict[int, Optional[Any]]:
+        timeout: float | None = None,
+    ) -> dict[int, Any | None]:
         requests = {
             node: partial(
                 self.send_app,
@@ -1821,8 +1822,8 @@ class SensorClient(Model):
         app_index: int,
         *,
         send_interval: float = 0.1,
-        timeout: Optional[float] = None,
-    ) -> Dict[int, Optional[Any]]:
+        timeout: float | None = None,
+    ) -> dict[int, Any | None]:
         requests = {
             node: partial(
                 self.send_app,
@@ -1866,8 +1867,8 @@ class SensorClient(Model):
         property_id: PropertyID,
         *,
         send_interval: float = 0.1,
-        timeout: Optional[float] = None,
-    ) -> Dict[int, Optional[Any]]:
+        timeout: float | None = None,
+    ) -> dict[int, Any | None]:
         requests = {
             node: partial(
                 self.send_app,
@@ -1930,8 +1931,8 @@ class LightCTLClient(Model):
         app_index: int,
         *,
         send_interval: float = 0.1,
-        timeout: Optional[float] = None,
-    ) -> Dict[int, Optional[Any]]:
+        timeout: float | None = None,
+    ) -> dict[int, Any | None]:
         requests = {
             node: partial(
                 self.send_app,
@@ -1975,8 +1976,8 @@ class LightCTLClient(Model):
         *,
         ctl_temperature: int,
         send_interval: float = 0.1,
-        timeout: Optional[float] = None,
-    ) -> Dict[int, Optional[Any]]:
+        timeout: float | None = None,
+    ) -> dict[int, Any | None]:
         requests = {
             node: partial(
                 self.send_app,
@@ -2029,7 +2030,7 @@ class GatewayConfigServer(Model):
         chip_rev_id: int,
         mtu: int,
         mac: str,
-        server: Tuple[str, int],
+        server: tuple[str, int],
         reconnect: int,
         ip: str,
         dns: str,
@@ -2113,12 +2114,12 @@ class GatewayConfigClient(Model):
         net_index: int,
         mtu: int,
         mac: str,
-        server: Tuple[str, int],
+        server: tuple[str, int],
         reconnect: int,
-        dns: Optional[str] = None,
-        ip: Optional[str] = None,
-        gateway: Optional[str] = None,
-        netmask: Optional[int] = None,
+        dns: str | None = None,
+        ip: str | None = None,
+        gateway: str | None = None,
+        netmask: int | None = None,
     ):
         payload = {
             "mtu_size": mtu,
@@ -2260,7 +2261,7 @@ class GatewayConfigClient(Model):
         self,
         destination: int,
         net_index: int,
-        server: Tuple[str, int],
+        server: tuple[str, int],
     ):
         request = partial(
             self.send_dev,
@@ -2419,9 +2420,9 @@ class LightExtendedControllerSetupClient(Model):
         property_id: int,
         *,
         send_interval: float = 1.0,
-        progress_callback: Optional[ProgressCallback] = None,
-        timeout: Optional[float] = None,
-    ) -> Dict[int, Optional[Any]]:
+        progress_callback: ProgressCallback | None = None,
+        timeout: float | None = None,
+    ) -> dict[int, Any | None]:
         requests = {
             node: partial(
                 self.send_dev,
@@ -2477,7 +2478,7 @@ class LightExtendedControllerSetupClient(Model):
             for node, result in results.items()
         }
 
-    async def get_auto_resume_mode(self, nodes: Sequence[int], net_index: int) -> Dict[int, Optional[Any]]:
+    async def get_auto_resume_mode(self, nodes: Sequence[int], net_index: int) -> dict[int, Any | None]:
         return await self.get_property(
             nodes,
             net_index,
@@ -2486,7 +2487,7 @@ class LightExtendedControllerSetupClient(Model):
             timeout=len(nodes) * 0.5,
         )
 
-    async def get_auto_resume_timer(self, nodes: Sequence[int], net_index: int) -> Dict[int, Optional[Any]]:
+    async def get_auto_resume_timer(self, nodes: Sequence[int], net_index: int) -> dict[int, Any | None]:
         return await self.get_property(
             nodes,
             net_index,
@@ -2547,7 +2548,7 @@ class TimeClient(Model):
         self,
         nodes: Sequence[int],
         app_index: int,
-    ) -> Dict[int, Optional[Any]]:
+    ) -> dict[int, Any | None]:
         requests = {
             node: partial(
                 self.send_app,
@@ -2583,7 +2584,7 @@ class TimeClient(Model):
         self,
         nodes: Sequence[int],
         app_index: int,
-    ) -> Dict[int, Optional[Any]]:
+    ) -> dict[int, Any | None]:
         requests = {
             node: partial(
                 self.send_app,

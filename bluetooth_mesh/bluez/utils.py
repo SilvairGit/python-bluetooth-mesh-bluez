@@ -23,22 +23,11 @@ import asyncio
 import itertools
 import logging
 from asyncio import CancelledError, Task, create_task
+from collections.abc import Awaitable, Callable, Hashable, Iterable, Mapping
 from contextlib import suppress
 from functools import wraps
 from inspect import isawaitable
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Dict,
-    Hashable,
-    Iterable,
-    Mapping,
-    Optional,
-    Protocol,
-    Tuple,
-    TypeVar,
-)
+from typing import Any, Protocol, TypeVar
 
 ParsedMeshMessage = Mapping[str, Any]
 MessageDescription = Mapping[str, Any]
@@ -46,7 +35,7 @@ ProgressCallback = Callable[[Hashable, Any, Mapping, Mapping], None]
 T = TypeVar("T")
 
 
-def chunks(iterable: Iterable[T], n: int, fillvalue: Optional[T] = None):
+def chunks(iterable: Iterable[T], n: int, fillvalue: T | None = None):
     """Collect data into fixed-length chunks or blocks"""
     # chunks('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
     args = [iter(iterable)] * n
@@ -58,7 +47,7 @@ class MeshError(Exception):
 
 
 class ModelOperationError(MeshError):
-    def __init__(self, message: str, status: Optional[ParsedMeshMessage] = None):
+    def __init__(self, message: str, status: ParsedMeshMessage | None = None):
         super().__init__(message)
         self.status = status
 
@@ -107,7 +96,7 @@ class Gatherer:
         - result of the task
     """
 
-    def __init__(self, aws: Iterable, timeout: Optional[int] = None, loop=None):
+    def __init__(self, aws: Iterable, timeout: int | None = None, loop=None):
         self.tasks = {asyncio.ensure_future(task): task for task in aws}
         self.buffer = asyncio.Queue()
 
@@ -167,7 +156,7 @@ class Respawn(Protocol):
 
 
 class TaskGroupKeyFunction(Protocol):
-    def __call__(self, *args: Tuple[Any], **kwargs: Mapping[str, Any]) -> Hashable: ...
+    def __call__(self, *args: tuple[Any], **kwargs: Mapping[str, Any]) -> Hashable: ...
 
 
 def tasklet(coro: AnyCoroutine) -> Respawn:
@@ -203,7 +192,7 @@ def tasklet(coro: AnyCoroutine) -> Respawn:
                                         # Task scheduled in previous line keeps running.
 
     """
-    handles: Dict[Hashable, Task] = {}
+    handles: dict[Hashable, Task] = {}
 
     @wraps(coro)
     async def respawn(*args: Any, **kwargs: Any) -> Task:

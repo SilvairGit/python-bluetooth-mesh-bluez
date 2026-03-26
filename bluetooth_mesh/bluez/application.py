@@ -31,10 +31,11 @@ import asyncio
 import logging
 import struct
 from abc import ABC, abstractmethod
+from collections.abc import Awaitable, Callable, Mapping
 from enum import Enum
 from functools import lru_cache, partial
 from os import urandom
-from typing import Any, Awaitable, Callable, Dict, List, Mapping, NamedTuple, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, NamedTuple
 from uuid import UUID, uuid5
 
 import construct
@@ -53,18 +54,14 @@ from bluetooth_mesh.bluez.interfaces import (
     ProvisionAgentInterface,
     ProvisionerInterface,
 )
-from bluetooth_mesh.bluez.models import (
-    AppKeyStatus,
-    ConfigClient,
-    Model,
-    ModelBindStatus,
-    ModelConfig,
-    ModelSubscriptionStatus,
-)
+from bluetooth_mesh.bluez.models import AppKeyStatus, ConfigClient, Model, ModelBindStatus, ModelConfig
 from bluetooth_mesh.bluez.tokenring import TokenRing
 from bluetooth_mesh.bluez.utils import MeshError
 from bluetooth_mesh.messages import AccessMessage
 from bluetooth_mesh.network.crypto import ApplicationKey, DeviceKey, NetworkKey
+
+if TYPE_CHECKING:
+    from bluetooth_mesh.bluez.models import ModelSubscriptionStatus
 
 __all__ = [
     "Application",
@@ -187,7 +184,7 @@ class TokenRingMixin(MachineUUIDMixin):
 class NetworkKeyMixin(ABC):
     @property
     @abstractmethod
-    def primary_net_key(self) -> Tuple[int, NetworkKey]:
+    def primary_net_key(self) -> tuple[int, NetworkKey]:
         """
         Index and key of the network that the application belongs to. Used when
         creating a new node, see :py:func:`Application.import_node`.
@@ -196,7 +193,7 @@ class NetworkKeyMixin(ABC):
 
     @property
     @abstractmethod
-    def subnet_keys(self) -> List[Tuple[int, NetworkKey]]:
+    def subnet_keys(self) -> list[tuple[int, NetworkKey]]:
         """
         Indexes and keys of the subnets.
         """
@@ -257,7 +254,7 @@ class IvIndexMixin:
 
 class ApplicationKeyMixin(NetworkKeyMixin):
     @property
-    def primary_app_key(self) -> Tuple[int, int, ApplicationKey]:
+    def primary_app_key(self) -> tuple[int, int, ApplicationKey]:
         """
         Return first found application key that is bound to primary network key.
         """
@@ -271,7 +268,7 @@ class ApplicationKeyMixin(NetworkKeyMixin):
 
     @property
     @abstractmethod
-    def app_keys(self) -> List[Tuple[int, int, ApplicationKey]]:
+    def app_keys(self) -> list[tuple[int, int, ApplicationKey]]:
         """
         Indexes, bound network key indexes, and application keys.
         """
@@ -325,7 +322,7 @@ class DBusMixin:
     def dbus_disconnected(self, _owner) -> Any:
         self.loop.stop()
 
-    async def __aenter__(self) -> "DBusMixin":
+    async def __aenter__(self) -> DBusMixin:
         await self.dbus_connect()
         return self
 
@@ -414,25 +411,25 @@ class ProvisioningMixin(ABC):
         raise NotImplementedError("Cancel functions should be overridden!")
 
     @property
-    def capabilities(self) -> List[Capabilities]:
+    def capabilities(self) -> list[Capabilities]:
         """
         Return list of available capabilities.
         """
         return self.CAPABILITIES
 
     @capabilities.setter
-    def capabilities(self, cap: List[Capabilities]):
+    def capabilities(self, cap: list[Capabilities]):
         self.CAPABILITIES = cap
 
     @property
-    def oob_info(self) -> List[OOBInfo]:
+    def oob_info(self) -> list[OOBInfo]:
         """
         Indicates availability of OOB data.
         """
         return self.OOBINFO
 
     @oob_info.setter
-    def oob_info(self, info: List[OOBInfo]):
+    def oob_info(self, info: list[OOBInfo]):
         self.OOBINFO = info
 
     @property
@@ -456,7 +453,7 @@ class ProvisionerMixin(ABC):
         raise NotImplementedError("Provisioner functions should be overridden!")
 
     @abstractmethod
-    def request_prov_data(self, count: int) -> Tuple[int, int]:
+    def request_prov_data(self, count: int) -> tuple[int, int]:
         """
         This method is implemented by a Provisioner capable application
         and is called when the remote device has been fully
@@ -520,7 +517,7 @@ class Application(  # pylint: disable=too-many-instance-attributes, disable=too-
 
     DBUS_SERVICE = MeshService
 
-    ELEMENTS = {}  # type: Dict[int, Type[Element]]
+    ELEMENTS: dict[int, type[Element]] = {}
 
     def __init__(self, loop: asyncio.AbstractEventLoop):
         super().__init__()
@@ -532,7 +529,7 @@ class Application(  # pylint: disable=too-many-instance-attributes, disable=too-
         self.provision_agent_interface = ProvisionAgentInterface(self)
         self.provisioner_interface = ProvisionerInterface(self)
 
-        self.elements = {}  # type: Dict[int, Element]
+        self.elements: dict[int, Element] = {}
 
         self.network_interface = None
         self.node_interface = None
@@ -606,16 +603,16 @@ class Application(  # pylint: disable=too-many-instance-attributes, disable=too-
 
         self.elements = {}
 
-    async def _join_callback(self, token, join_callback: Optional[Callable[[int], Awaitable[int]]] = None):
+    async def _join_callback(self, token, join_callback: Callable[[int], Awaitable[int]] | None = None):
         self.token_ring.token = token
         if join_callback:
             return await join_callback(token)
 
     async def connect(
         self,
-        join_callback: Optional[Callable[[int], Awaitable[int]]] = None,
+        join_callback: Callable[[int], Awaitable[int]] | None = None,
         **kwargs,
-    ) -> Mapping[int, Dict[Tuple[int, int], Dict[str, Tuple[Any, int]]]]:
+    ) -> Mapping[int, dict[tuple[int, int], dict[str, tuple[Any, int]]]]:
         """
         Connect to BlueZ. If a node doesn't exist yet, it gets created via
         Import() call, using self.dev_key, self.primary_net_key, self.address
@@ -673,7 +670,7 @@ class Application(  # pylint: disable=too-many-instance-attributes, disable=too-
 
     async def add_app_key(
         self, net_key_index: int, app_key_index: int, app_key: ApplicationKey
-    ) -> "AppKeyStatus":
+    ) -> AppKeyStatus:
         """
         Imports an application key into daemon's keyring.
 
@@ -691,7 +688,7 @@ class Application(  # pylint: disable=too-many-instance-attributes, disable=too-
             app_key=app_key,
         )
 
-    async def delete_app_key(self, net_key_index: int, app_key_index: int) -> "AppKeyStatus":
+    async def delete_app_key(self, net_key_index: int, app_key_index: int) -> AppKeyStatus:
         """
         Removes an application key from daemon's keyring.
 
@@ -707,7 +704,7 @@ class Application(  # pylint: disable=too-many-instance-attributes, disable=too-
             net_key_index=net_key_index,
         )
 
-    async def bind_app_key(self, app_key_index: int, model: "Model") -> "ModelBindStatus":
+    async def bind_app_key(self, app_key_index: int, model: Model) -> ModelBindStatus:
         """
         See :py:func:`Model.bind` instead.
         """
@@ -721,7 +718,7 @@ class Application(  # pylint: disable=too-many-instance-attributes, disable=too-
             model=type(model),
         )
 
-    async def subscribe_model(self, subscription_address: int, model: "Model") -> "ModelSubscriptionStatus":
+    async def subscribe_model(self, subscription_address: int, model: Model) -> ModelSubscriptionStatus:
         """
         See :py:func:`Model.subscribe` instead.
         """
@@ -735,7 +732,7 @@ class Application(  # pylint: disable=too-many-instance-attributes, disable=too-
             model=type(model),
         )
 
-    async def unsubscribe_model(self, subscription_address: int, model: "Model") -> "ModelSubscriptionStatus":
+    async def unsubscribe_model(self, subscription_address: int, model: Model) -> ModelSubscriptionStatus:
         """
         See :py:func:`Model.unsubscribe` instead.
         """
@@ -749,7 +746,7 @@ class Application(  # pylint: disable=too-many-instance-attributes, disable=too-
             model=type(model),
         )
 
-    async def clear_subscriptions(self, model: "Model") -> "ModelSubscriptionStatus":
+    async def clear_subscriptions(self, model: Model) -> ModelSubscriptionStatus:
         """
         See :py:func:`Model.unsubscribe_all` instead.
         """
@@ -762,7 +759,7 @@ class Application(  # pylint: disable=too-many-instance-attributes, disable=too-
             model=type(model),
         )
 
-    def get_model_instance(self, element: int, model: Type["Model"]) -> "Model":
+    def get_model_instance(self, element: int, model: type[Model]) -> Model:
         return self.elements[element][model]
 
     async def join(self):
@@ -803,7 +800,7 @@ class Application(  # pylint: disable=too-many-instance-attributes, disable=too-
         self.logger.info("Leave")
         await self.network_interface.leave(self.token_ring.token)
 
-    async def attach(self, token: int, *, socket_pair=False, socket_path: Optional[str] = None):
+    async def attach(self, token: int, *, socket_pair=False, socket_path: str | None = None):
         """
         Attach to existing node using a token.
 
@@ -899,7 +896,7 @@ class Application(  # pylint: disable=too-many-instance-attributes, disable=too-
 
     async def import_node(
         self,
-        join_callback: Optional[Callable[[int], Awaitable[int]]] = None,
+        join_callback: Callable[[int], Awaitable[int]] | None = None,
         key_refresh: bool = False,
     ) -> int:
         """
@@ -955,7 +952,7 @@ class LocationMixin:
     Provides `location` property.
     """
 
-    LOCATION = None  # type: int
+    LOCATION: int | None = None
 
     def __init__(self):
         assert self.LOCATION is not None
@@ -970,12 +967,12 @@ class Element(LocationMixin):
     Base class for elements.
     """
 
-    MODELS = []  # type: List[Type["Model"]]
+    MODELS: list[type[Model]] = []
 
     def __init__(self, application: Application, index: int):
         super().__init__()
 
-        self.logger = application.logger.getChild(f"Element{index}")  # type: logging.Logger
+        self.logger: logging.Logger = application.logger.getChild(f"Element{index}")
         self.application = application
         self.index = index
         self.path = f"{self.application.path}/element{index}"
@@ -987,11 +984,11 @@ class Element(LocationMixin):
                 len(models) == 1
             ), f"Element #{index} declares models {models!r} with overlapping opcode {opcode!r}"
 
-        self._models = {
+        self._models: dict[type[Model], Model] = {
             model_class: model_class(self) for model_class in self.MODELS
-        }  # type: Dict[Type["Model"], "Model"]
+        }
 
-    def message_received(self, source: int, app_index: int, destination: Union[int, UUID], data: bytes):
+    def message_received(self, source: int, app_index: int, destination: int | UUID, data: bytes):
         """
         Called by :py:class:`bluetooth_mesh.interfaces.ElementInterface` when
         receiving a message encrypted with application key.
@@ -1050,9 +1047,7 @@ class Element(LocationMixin):
 
         return None
 
-    def update_model_configuration(
-        self, model_id: Tuple[Optional[int], int], configuration: Mapping[str, Any]
-    ):
+    def update_model_configuration(self, model_id: tuple[int | None, int], configuration: Mapping[str, Any]):
         """
         Called by :py:class:`bluetooth_mesh.interfaces.ElementInterface` when model
         configuration is updated via daemon's internal Config Server model.
@@ -1068,11 +1063,11 @@ class Element(LocationMixin):
 
         return None
 
-    def __getitem__(self, model_class: Type["Model"]) -> "Model":
+    def __getitem__(self, model_class: type[Model]) -> Model:
         return self._models[model_class]
 
     @property
-    def models(self) -> List[Tuple[int, bool, bool]]:
+    def models(self) -> list[tuple[int, bool, bool]]:
         """
         Used by :py:class:`bluetooth_mesh.interfaces.ApplicationInterface` to expose a
         list of supported SIG models via D-Bus.
@@ -1084,7 +1079,7 @@ class Element(LocationMixin):
         ]
 
     @property
-    def vendor_models(self) -> List[Tuple[Tuple[int, int], bool, bool]]:
+    def vendor_models(self) -> list[tuple[tuple[int, int], bool, bool]]:
         """
         Used by :py:class:`bluetooth_mesh.interfaces.ApplicationInterface` to expose a
         list of supported vendor models via D-Bus.
