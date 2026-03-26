@@ -26,7 +26,19 @@ from asyncio import CancelledError, Task, create_task
 from contextlib import suppress
 from functools import wraps
 from inspect import isawaitable
-from typing import Any, Awaitable, Callable, Dict, Hashable, Iterable, Mapping, Optional, Protocol, Tuple, TypeVar
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Hashable,
+    Iterable,
+    Mapping,
+    Optional,
+    Protocol,
+    Tuple,
+    TypeVar,
+)
 
 ParsedMeshMessage = Mapping[str, Any]
 MessageDescription = Mapping[str, Any]
@@ -147,18 +159,15 @@ def construct_match(received, expected):
 
 
 class AnyCoroutine(Protocol):
-    def __call__(self, *args: Any, **kwargs: Any) -> Awaitable[Any]:
-        ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Awaitable[Any]: ...
 
 
 class Respawn(Protocol):
-    def __call__(self, *args: Any, **kwargs: Any) -> Awaitable[Task]:
-        ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Awaitable[Task]: ...
 
 
 class TaskGroupKeyFunction(Protocol):
-    def __call__(self, *args: Tuple[Any], **kwargs: Mapping[str, Any]) -> Hashable:
-        ...
+    def __call__(self, *args: Tuple[Any], **kwargs: Mapping[str, Any]) -> Hashable: ...
 
 
 def tasklet(coro: AnyCoroutine) -> Respawn:

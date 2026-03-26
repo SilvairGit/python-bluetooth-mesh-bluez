@@ -31,8 +31,8 @@ from concurrent import futures
 from contextlib import suppress
 from datetime import datetime, timedelta
 from functools import lru_cache, partial
-from itertools import cycle
 from importlib.metadata import version
+from itertools import cycle
 from uuid import UUID
 
 from docopt import DocoptExit, docopt
@@ -43,10 +43,6 @@ from prompt_toolkit.patch_stdout import patch_stdout
 
 from bluetooth_mesh.bluez.application import Application, Element
 from bluetooth_mesh.bluez.apps import get_plugin_manager
-from bluetooth_mesh.network.crypto import DeviceKey, NetworkKey
-from bluetooth_mesh.messages.config import GATTNamespaceDescriptor, PublishPeriodStepResolution
-from bluetooth_mesh.messages.properties import PropertyID
-from bluetooth_mesh.messages.time import CURRENT_TAI_UTC_DELTA, UNCERTAINTY_MS, TimeRole
 from bluetooth_mesh.bluez.models import (
     ConfigClient,
     ConfigServer,
@@ -64,6 +60,10 @@ from bluetooth_mesh.bluez.models import (
     SensorClient,
     TimeClient,
 )
+from bluetooth_mesh.messages.config import GATTNamespaceDescriptor, PublishPeriodStepResolution
+from bluetooth_mesh.messages.properties import PropertyID
+from bluetooth_mesh.messages.time import CURRENT_TAI_UTC_DELTA, UNCERTAINTY_MS, TimeRole
+from bluetooth_mesh.network.crypto import DeviceKey, NetworkKey
 
 __version__ = version("bluetooth-mesh-bluez")
 

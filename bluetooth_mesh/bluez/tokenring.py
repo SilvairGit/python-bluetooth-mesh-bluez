@@ -51,7 +51,7 @@ class TokenRing:
                     r = tokenfile.read()
                     try:
                         return StoredNodeSchema().loads(r)
-                    except (JSONDecodeError, ValidationError, EOFError):
+                    except JSONDecodeError, ValidationError, EOFError:
                         return dict(token=int(r, 16), acl={}, network={})
 
             except FileNotFoundError:
