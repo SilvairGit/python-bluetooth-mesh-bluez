@@ -20,12 +20,13 @@
 #
 #
 # pylint: disable=W0621, C0103
-import pytest
 from unittest import mock
 from unittest.mock import ANY, AsyncMock, patch
 
-from bluetooth_mesh.bluez.models import SceneClient
+import pytest
+
 from bluetooth_mesh.bluez.application import Element
+from bluetooth_mesh.bluez.models import SceneClient
 from bluetooth_mesh.messages.config import GATTNamespaceDescriptor
 
 
@@ -43,18 +44,14 @@ def scene_client(element_path) -> SceneClient:
 
 @pytest.mark.asyncio
 @patch("asyncio.sleep", new=AsyncMock())
-async def test_sending_scene_recall_repeated_6_times_with_intervals(
-    scene_client, destination, app_index
-):
+async def test_sending_scene_recall_repeated_6_times_with_intervals(scene_client, destination, app_index):
     scene_client.repeat = AsyncMock()
 
     await scene_client.recall_scene_unack(
         destination=destination, app_index=app_index, scene_number=1, transition_time=0
     )
 
-    scene_client.repeat.assert_awaited_once_with(
-        ANY, retransmissions=6, send_interval=0.075
-    )
+    scene_client.repeat.assert_awaited_once_with(ANY, retransmissions=6, send_interval=0.075)
 
 
 # pylint: disable=W0212
@@ -65,14 +62,10 @@ async def test_scene_recall_calls_node_interface_with_appropriate_arguments(
 ):
     scene_client._node_interface.send = AsyncMock()
 
-    await scene_client.recall_scene_unack(
-        destination, app_index, scene_number=1, transition_time=0
-    )
+    await scene_client.recall_scene_unack(destination, app_index, scene_number=1, transition_time=0)
 
     data = b"\x82C\x01\x00\x00\x00\x18"
-    scene_client._node_interface.send.assert_awaited_with(
-        element_path, destination, app_index, data
-    )
+    scene_client._node_interface.send.assert_awaited_with(element_path, destination, app_index, data)
 
 
 @pytest.mark.asyncio
@@ -81,15 +74,11 @@ async def test_scene_recall_calls_node_interface_with_appropriate_arguments(
     "number_of_scene_recalls, next_tid",
     [pytest.param(1, 0), pytest.param(255, 254), pytest.param(256, 0)],
 )
-async def test_scene_recall_increases_tid(
-    scene_client, number_of_scene_recalls, next_tid
-):
+async def test_scene_recall_increases_tid(scene_client, number_of_scene_recalls, next_tid):
     scene_client.send_app = AsyncMock()
 
     for _ in range(number_of_scene_recalls):
-        await scene_client.recall_scene_unack(
-            ANY, ANY, scene_number=ANY, transition_time=ANY
-        )
+        await scene_client.recall_scene_unack(ANY, ANY, scene_number=ANY, transition_time=ANY)
 
     scene_client.send_app.assert_awaited_with(
         ANY,

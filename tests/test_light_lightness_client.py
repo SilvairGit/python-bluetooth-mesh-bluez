@@ -20,14 +20,20 @@
 #
 #
 # pylint: disable=redefined-outer-name, invalid-name
-import pytest
 from unittest import mock
 from unittest.mock import ANY, AsyncMock, call, patch
 
+import pytest
+
 from bluetooth_mesh.bluez.application import Element
 from bluetooth_mesh.bluez.models import LightLightnessClient
-from bluetooth_mesh.messages.light import LightLightnessMessage, LightLightnessOpcode, LightLightnessSetupMessage, LightLightnessSetupOpcode
 from bluetooth_mesh.messages.config import GATTNamespaceDescriptor
+from bluetooth_mesh.messages.light import (
+    LightLightnessMessage,
+    LightLightnessOpcode,
+    LightLightnessSetupMessage,
+    LightLightnessSetupOpcode,
+)
 
 
 class LLElementMock(Element):
@@ -53,9 +59,7 @@ async def test_sending_set_lightness_range_repeated_6_times_with_intervals_by_de
         destination=destination, app_index=app_index, min_lightness=0, max_lightness=100
     )
 
-    light_lightness_client.repeat.assert_awaited_once_with(
-        ANY, retransmissions=6, send_interval=0.075
-    )
+    light_lightness_client.repeat.assert_awaited_once_with(ANY, retransmissions=6, send_interval=0.075)
 
 
 @pytest.mark.asyncio
@@ -69,9 +73,7 @@ async def test_sending_set_lightness_repeated_6_times_with_intervals_by_default(
         destination=destination, app_index=app_index, transition_time=0, lightness=100
     )
 
-    light_lightness_client.repeat.assert_awaited_once_with(
-        ANY, retransmissions=6, send_interval=0.075
-    )
+    light_lightness_client.repeat.assert_awaited_once_with(ANY, retransmissions=6, send_interval=0.075)
 
 
 # pylint: disable=protected-access
