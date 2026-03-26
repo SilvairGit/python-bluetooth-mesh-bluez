@@ -27,6 +27,7 @@ They are not meant to be used directly. See :py:mod:`bluetooth_mesh.application`
 
 .. _mesh-api.txt: https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/doc/mesh-api.txt
 """
+
 # dbus-next annotations have compatibility issues
 # ruff: noqa: F722, F821
 
@@ -45,8 +46,8 @@ from dbus_next import DBusError, Variant
 from dbus_next.message import MessageFlag
 from dbus_next.service import PropertyAccess, ServiceInterface, dbus_property, method
 
-from bluetooth_mesh.network.crypto import ApplicationKey, DeviceKey, NetworkKey
 from bluetooth_mesh.bluez.utils import Signal
+from bluetooth_mesh.network.crypto import ApplicationKey, DeviceKey, NetworkKey
 
 
 class DBusService:
@@ -335,9 +336,11 @@ class NetworkInterface:
 
         return path, self._extract_model_config(configuration)
 
-    async def attach_fd(
-        self, app_defined_root: str, token: int
-    ) -> Tuple[str, Dict[int, Dict[Tuple[Optional[int], int], Mapping[str, Any]]], socket.socket,]:
+    async def attach_fd(self, app_defined_root: str, token: int) -> Tuple[
+        str,
+        Dict[int, Dict[Tuple[Optional[int], int], Mapping[str, Any]]],
+        socket.socket,
+    ]:
         path, configuration, fd = await self._interface.call_attach_fd(app_defined_root, token)
 
         sock = socket.fromfd(fd, socket.AF_UNIX, socket.SOCK_DGRAM)
@@ -345,9 +348,11 @@ class NetworkInterface:
 
         return path, self._extract_model_config(configuration), sock
 
-    async def attach_unix(
-        self, app_defined_root: str, token: int, socket_path: str
-    ) -> Tuple[str, Dict[int, Dict[Tuple[Optional[int], int], Mapping[str, Any]]], socket.socket,]:
+    async def attach_unix(self, app_defined_root: str, token: int, socket_path: str) -> Tuple[
+        str,
+        Dict[int, Dict[Tuple[Optional[int], int], Mapping[str, Any]]],
+        socket.socket,
+    ]:
         with suppress(FileNotFoundError):
             os.unlink(socket_path)
 
