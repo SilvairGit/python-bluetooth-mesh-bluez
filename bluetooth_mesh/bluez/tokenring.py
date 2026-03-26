@@ -47,18 +47,18 @@ class TokenRing:
         os.makedirs(self.path, exist_ok=True)
         for path in [self.path, os.path.expanduser(self.LEGACY_PATH)]:
             try:
-                with open(os.path.join(path, self.uuid), "r") as tokenfile:
+                with open(os.path.join(path, self.uuid), "r", encoding="utf-8") as tokenfile:
                     r = tokenfile.read()
                     try:
                         return StoredNodeSchema().loads(r)
                     except JSONDecodeError, ValidationError, EOFError:
-                        return dict(token=int(r, 16), acl={}, network={})
+                        return {"token": int(r, 16), "acl": {}, "network": {}}
 
             except FileNotFoundError:
-                return dict(token=0, acl={}, network={})
+                return {"token": 0, "acl": {}, "network": {}}
 
     def _save(self):
-        with open(os.path.join(self.path, self.uuid), "w") as tokenfile:
+        with open(os.path.join(self.path, self.uuid), "w", encoding="utf-8") as tokenfile:
             tokenfile.write(StoredNodeSchema().dumps(self.data))
 
     @property
@@ -74,7 +74,7 @@ class TokenRing:
         if all((uuid, token)):
             self.data["acl"][uuid] = token
             self._save()
-            return
+            return None
 
         return self.data["acl"].get(uuid) if uuid else self.data["acl"].items()
 

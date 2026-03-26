@@ -63,7 +63,7 @@ class ModelOperationError(MeshError):
         self.status = status
 
     def __repr__(self):
-        return "{}({!r})".format(type(self).__name__, self.status)
+        return f"{type(self).__name__}({self.status!r})"
 
 
 class Signal:
@@ -86,7 +86,7 @@ class Signal:
                 result = callback(*args, **kwargs)
                 if isawaitable(result):
                     await result
-            except Exception as ex:
+            except Exception as ex:  # pylint: disable=broad-exception-caught
                 self.logger.warning("Callback exception: %s", ex)
 
     @property
@@ -173,10 +173,11 @@ class TaskGroupKeyFunction(Protocol):
 def tasklet(coro: AnyCoroutine) -> Respawn:
     """
     Use case: you need to perform long-running background operations (tasks) that are spawned at random,
-    and additionally, you want only one such operation running at a time for any given task group. If a new task is
-    scheduled in a group, the previous, running one, is cancelled.
+    and additionally, you want only one such operation running at a time for any given task group.
+    If a new task is scheduled in a group, the previous, running one, is cancelled.
 
-    To group tasks, a user-supplied `group_by` function is used. If set to None, all tasks are deemed to be in the same
+    To group tasks, a user-supplied `group_by` function is used.
+    If set to None, all tasks are deemed to be in the same
     group.
 
     Example:
@@ -194,14 +195,15 @@ def tasklet(coro: AnyCoroutine) -> Respawn:
 
         ...
 
-        await levels.emit(0xDEAD, 50)   #  Schedules `set_level` coroutine (group = 0xDEAD)
-        await levels.emit(0xBEEF, 50)   #  Schedules another `set_level` coroutine (group = 0xBEEF)
+        await levels.emit(0xDEAD, 50)   # Schedules `set_level` coroutine (group = 0xDEAD)
+        await levels.emit(0xBEEF, 50)   # Schedules another `set_level` coroutine (group = 0xBEEF)
 
-        await levels.emit(0xDEAD, 100)  #  Cancels running task in group 0xDEAD and schedules another `set_level`
-                                        #  coroutine (group = 0xDEAD). Task scheduled in previous line keeps running.
+        await levels.emit(0xDEAD, 100)  # Cancels running task in group 0xDEAD and schedules
+                                        # another `set_level` coroutine (group = 0xDEAD).
+                                        # Task scheduled in previous line keeps running.
 
     """
-    handles: Dict[Hashable, Task] = dict()
+    handles: Dict[Hashable, Task] = {}
 
     @wraps(coro)
     async def respawn(*args: Any, **kwargs: Any) -> Task:

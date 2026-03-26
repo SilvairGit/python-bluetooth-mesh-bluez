@@ -29,7 +29,6 @@ They are not meant to be used directly. See :py:mod:`bluetooth_mesh.application`
 """
 
 # dbus-next annotations have compatibility issues
-# ruff: noqa: F722, F821
 
 import asyncio
 import logging
@@ -77,7 +76,7 @@ class DBusInterface:
     async def get_service(self, service):
         owner = asyncio.Future()
 
-        def name_owner_changed(name, old_owner, new_owner):
+        def name_owner_changed(name, _old_owner, new_owner):
             if name != service.NAME:
                 return
 
@@ -217,16 +216,16 @@ class ProvisionAgentInterface(ServiceInterface):
         self.application.display_string(value)
 
     @method(name="DisplayNumeric")
-    def display_numeric(self, type: "s", number: "u"):
-        self.application.display_numeric(type, number)
+    def display_numeric(self, kind: "s", number: "u"):
+        self.application.display_numeric(kind, number)
 
     @method(name="PromptNumeric")
-    def prompt_numeric(self, type: "s") -> "u":
-        return self.application.prompt_numeric(type)
+    def prompt_numeric(self, kind: "s") -> "u":
+        return self.application.prompt_numeric(kind)
 
     @method(name="PromptStatic")
-    def prompt_static(self, type: "s") -> "ay":
-        return self.application.prompt_static(type)
+    def prompt_static(self, kind: "s") -> "ay":
+        return self.application.prompt_static(kind)
 
     @method(name="Cancel")
     def cancel(self):
@@ -304,8 +303,7 @@ class _ApplicationInterfaceCRPL(_ApplicationInterface):
 def ApplicationInterface(application):
     if application.crpl is not None:
         return _ApplicationInterfaceCRPL(application)
-    else:
-        return _ApplicationInterface(application)
+    return _ApplicationInterface(application)
 
 
 class NetworkInterface:
@@ -370,7 +368,7 @@ class NetworkInterface:
     async def create_network(self, app_root: str, uuid: UUID) -> None:
         return await self._interface.call_create_network(app_root, uuid.bytes)
 
-    async def import_node(
+    async def import_node(  # pylint: disable=too-many-arguments
         self,
         app_root: str,
         uuid: UUID,
@@ -418,7 +416,7 @@ class NodeInterface:
         self._properties = node_service.get_interface("org.freedesktop.DBus.Properties")
         self._properties.on_properties_changed(self._on_properties_changed)
 
-    def _on_properties_changed(self, interface: str, changed: Mapping[str, Any], invalidated: Sequence[str]):
+    def _on_properties_changed(self, interface: str, changed: Mapping[str, Any], _invalidated: Sequence[str]):
         if interface != "org.bluez.mesh.Node1":
             return
 
@@ -450,7 +448,7 @@ class NodeInterface:
             element_path,
             destination,
             key_index,
-            dict(ForceSegmented=Variant("b", force_segmented)),
+            {"ForceSegmented": Variant("b", force_segmented)},
             data,
             flags=MessageFlag.NO_REPLY_EXPECTED,
         )
@@ -469,7 +467,7 @@ class NodeInterface:
             destination,
             remote,
             net_index,
-            dict(ForceSegmented=Variant("b", force_segmented)),
+            {"ForceSegmented": Variant("b", force_segmented)},
             data,
             flags=MessageFlag.NO_REPLY_EXPECTED,
         )
@@ -502,7 +500,7 @@ class NodeInterface:
         force_segmented: bool = False,
         vendor: Optional[int] = None,
     ) -> None:
-        options = dict(ForceSegmented=Variant("b", force_segmented))
+        options = {"ForceSegmented": Variant("b", force_segmented)}
 
         if vendor:
             options["Vendor"] = Variant("q", vendor)
@@ -552,16 +550,16 @@ class ManagementInterface:
         self._interface = node_service.get_interface("org.bluez.mesh.Management1")
 
     async def unprovisioned_scan(self, **kwargs) -> None:
-        options = dict(Seconds=Variant("q", kwargs.get("seconds", 0)))
+        options = {"Seconds": Variant("q", kwargs.get("seconds", 0))}
         await self._interface.call_unprovisioned_scan(options)
 
     async def unprovisioned_scan_cancel(self) -> None:
         await self._interface.call_unprovisioned_scan_cancel()
 
-    async def add_node(self, uuid: UUID, **kwargs) -> None:
-        options = dict(
-            # TODO: populate with options when defined
-        )
+    async def add_node(self, uuid: UUID, **_kwargs) -> None:
+        options = {
+            # TODO: populate with options when defined # pylint: disable=fixme
+        }
         await self._interface.call_add_node(uuid.bytes, options)
 
     async def create_subnet(self, net_index: int) -> None:

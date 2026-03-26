@@ -77,7 +77,7 @@ class Model:
         self.__tid = 0
         self.element = element
 
-        self.logger = self.element.logger.getChild("%s" % type(self).__name__)
+        self.logger = self.element.logger.getChild(f"{type(self).__name__}")
 
         self.app_message_callbacks = defaultdict(set)  # type: Dict[int, Set[Callable]]
         self.dev_message_callbacks = defaultdict(set)  # type: Dict[int, Set[Callable]]
@@ -93,9 +93,9 @@ class Model:
 
     def __str__(self):
         if self.MODEL_ID[0] is None:
-            return "<Model %04x>" % self.MODEL_ID[1]
+            return f"<Model {self.MODEL_ID[1]:04x}>"
 
-        return "<VendorModel %04x%04x>" % self.MODEL_ID
+        return f"<VendorModel {self.MODEL_ID[0]:04x}{self.MODEL_ID[1]:04x}>"
 
     @property
     def _node_interface(self):
@@ -274,7 +274,7 @@ class Model:
         :param params: Message parameters.
         """
 
-        data = AccessMessage.build(dict(opcode=opcode, params=params))
+        data = AccessMessage.build({"opcode": opcode, "params": params})
 
         message = AccessMessage.parse(data)
         self.logger.debug(
@@ -320,7 +320,7 @@ class Model:
         """
 
         remote = True
-        data = AccessMessage.build(dict(opcode=opcode, params=params))
+        data = AccessMessage.build({"opcode": opcode, "params": params})
 
         message = AccessMessage.parse(data)
         self.logger.debug(
@@ -467,7 +467,9 @@ class Model:
             - subscription address (usually a group address)
             - class object of the bound model
         """
-        from bluetooth_mesh.bluez.models import ModelSubscriptionStatus
+        from bluetooth_mesh.bluez.models import (  # pylint: disable=import-outside-toplevel
+            ModelSubscriptionStatus,
+        )
 
         self.subscription_callbacks[subscription_address].add(callback)
 
@@ -497,7 +499,9 @@ class Model:
             - subscription address (usually a group address)
             - class object of the bound model
         """
-        from bluetooth_mesh.bluez.models import ModelSubscriptionStatus
+        from bluetooth_mesh.bluez.models import (  # pylint: disable=import-outside-toplevel
+            ModelSubscriptionStatus,
+        )
 
         if subscription_address is None:
             self.subscription_callbacks.clear()

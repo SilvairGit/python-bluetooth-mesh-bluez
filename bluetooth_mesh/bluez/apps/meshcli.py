@@ -19,6 +19,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 #
+# pylint: disable=too-many-lines
+
 import asyncio
 import inspect
 import itertools
@@ -41,6 +43,7 @@ from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.patch_stdout import patch_stdout
 
+from bluetooth_mesh.bluez import models
 from bluetooth_mesh.bluez.application import Application, Element
 from bluetooth_mesh.bluez.apps import get_plugin_manager
 from bluetooth_mesh.bluez.models import (
@@ -63,7 +66,7 @@ from bluetooth_mesh.bluez.models import (
 from bluetooth_mesh.messages.config import GATTNamespaceDescriptor, PublishPeriodStepResolution
 from bluetooth_mesh.messages.properties import PropertyID
 from bluetooth_mesh.messages.time import CURRENT_TAI_UTC_DELTA, UNCERTAINTY_MS, TimeRole
-from bluetooth_mesh.network.crypto import DeviceKey, NetworkKey
+from bluetooth_mesh.network.crypto import ApplicationKey, DeviceKey, NetworkKey
 
 __version__ = version("bluetooth-mesh-bluez")
 
@@ -75,7 +78,7 @@ class MeshCompleter(Completer):
         self.application = application
         super().__init__()
 
-    def get_completions(self, document, complete_event):
+    def get_completions(self, document, complete_event):  # pylint: disable=too-many-branches
         if not document.is_cursor_at_the_end:
             return
 
@@ -95,7 +98,7 @@ class MeshCompleter(Completer):
 
                     if group_name.startswith(words[-1]):
                         if " " in group_name:
-                            group_name = '"{}"'.format(group_name)
+                            group_name = f'"{group_name}"'
                         yield Completion(group_name, start_position=-len(words[-1]))
 
             else:  # try nodes
@@ -115,7 +118,7 @@ class Command:
         raise NotImplementedError()
 
     def get_usage(self, **kwargs):
-        return self.USAGE % dict(cmd=self.CMD, **kwargs)
+        return self.USAGE % {"cmd": self.CMD, **kwargs}
 
     def __lt__(self, other):
         return self.CMD < other.CMD
@@ -185,15 +188,15 @@ class LsCommand(Command):
                     nodes[group].append(node)
 
             for group, nodes in sorted(nodes.items(), key=lambda n: n[0]):
-                yield "{}:".format(group)
+                yield f"{group}:"
                 for node in sorted(nodes, key=lambda n: n.uuid):
                     if arguments["--long"]:
-                        yield "\t{} {:04x} {}".format(node.uuid, node.address, node.name)
+                        yield f"\t{node.uuid} {node.address:04x} {node.name}"
                     else:
-                        yield "\t{}".format(node.name)
+                        yield f"\t{node.name}"
         else:
             for group in sorted(group.name for group in application.network.groups if group.name):
-                yield "\t{}".format(group)
+                yield f"\t{group}"
 
 
 class ModelCommandMixin:
@@ -302,7 +305,7 @@ class SceneCommand(ModelCommandMixin, NodeSelectionCommandMixin, Command):
             group = application.network.get_node_group(node)
 
             param = str(data["current_scene"]) if data is not None else None
-            yield "{} | {}: {}".format(group, node.name, param)
+            yield f"{group} | {node.name}: {param}"
 
     async def __call__(self, application, arguments):
         model = self.get_model(application)
@@ -322,7 +325,7 @@ class ModelGetCommandMixin(ModelCommandMixin, NodeSelectionCommandMixin):
         model = self.get_model(application)
         addresses = self.get_addresses(application, arguments)
 
-        get = getattr(model, "get_{}".format(self.PARAMETER))
+        get = getattr(model, f"get_{self.PARAMETER}")
         results = await get(addresses, 0)
 
         for address, data in results.items():
@@ -330,7 +333,7 @@ class ModelGetCommandMixin(ModelCommandMixin, NodeSelectionCommandMixin):
             group = application.network.get_node_group(node)
 
             param = self.format(data) if data is not None else None
-            yield "{} | {}: {}".format(group, node.name, param)
+            yield f"{group} | {node.name}: {param}"
 
 
 class DebugCommand(ModelGetCommandMixin, Command):
@@ -351,7 +354,7 @@ class FaultCommand(DebugCommand):
     PARAMETER = "last_sw_fault"
 
     def format(self, data):
-        return "{}, {}".format(data["fault"], timedelta(seconds=data["time"]))
+        return f"{data['fault']}, {timedelta(seconds=data['time'])}"
 
 
 class VersionCommand(DebugCommand):
@@ -373,7 +376,7 @@ class ArapCommand(DebugCommand):
 
     def format(self, data):
         return "\n" + "\n".join(
-            "\t{:04x}: {:8d} ivi={:1d}".format(k, v["sequence"], v["ivi"]) for k, v in data["nodes"].items()
+            f"\t{k:04x}: {v['sequence']:8d} ivi={v['ivi']:1d}" for k, v in data["nodes"].items()
         )
 
 
@@ -382,7 +385,7 @@ class StatsCommand(DebugCommand):
     PARAMETER = "system_stats"
 
     def format(self, data):
-        return "\n" + "\n".join("\t{:>10s}: {:5d}".format(k, v) for k, v in data["stats"].items())
+        return "\n" + "\n".join(f"\t{k:>10s}: {v:5d}" for k, v in data["stats"].items())
 
 
 class AppVersionCommand(DebugCommand):
@@ -411,10 +414,9 @@ class RelayCommand(ConfigCommand):
     PARAMETER = "relay"
 
     def format(self, data):
-        return "%s <interval: %sms, count: %s>" % (
-            data["relay"],
-            data["retransmit"]["interval"],
-            data["retransmit"]["count"],
+        return (
+            f"{data['relay']} <interval: {data['retransmit']['interval']}ms, "
+            f"count: {data['retransmit']['count']}>"
         )
 
 
@@ -453,8 +455,6 @@ class PublicationCommand(ModelCommandMixin, NodeSelectionCommandMixin, Command):
         return RESOLUTIONS[resolution] if resolution is not None else None
 
     async def __call__(self, application, arguments):
-        from bluetooth_mesh.bluez import models
-
         model = self.get_model(application)
         addresses = self.get_addresses(application, arguments)
 
@@ -490,17 +490,12 @@ class PublicationCommand(ModelCommandMixin, NodeSelectionCommandMixin, Command):
                     model=getattr(models, arguments["--model"]),
                 )
 
-            yield "{} | {}: #{} {} addr={:04x}, ttl={} key=#{} period={}, retransmit={}/{}".format(
-                group,
-                node.name,
-                element_index,
-                status.model.__name__,
-                status.publication_address,
-                status.ttl,
-                status.app_key_index,
-                status.period.total_seconds(),
-                status.retransmissions["count"],
-                status.retransmissions["interval"].total_seconds(),
+            yield (
+                f"{group} | {node.name}: #{element_index} {status.model.__name__} "
+                f"addr={status.publication_address:04x}, ttl={status.ttl} "
+                f"key=#{status.app_key_index} period={status.period.total_seconds()}, "
+                f"retransmit={status.retransmissions['count']}/"
+                f"{status.retransmissions['interval'].total_seconds()}"
             )
 
 
@@ -517,8 +512,6 @@ class SubscribeCommand(Command):
     """
 
     async def __call__(self, application: Application, arguments):
-        from bluetooth_mesh.bluez import models
-
         model = application.get_model_instance(
             int(arguments["--element"]), getattr(models, arguments["--model"])
         )
@@ -530,7 +523,7 @@ class SubscribeCommand(Command):
         )
 
     @staticmethod
-    def on_message(source, destination, app_index, message):
+    def on_message(source, destination, _app_index, message):
         timestamp = datetime.now().strftime("%Y-%m-%d %T.%f")
         print(f"{timestamp} {source:04x} -> {destination:04x}: {message!r}")
 
@@ -551,8 +544,6 @@ class AddSubscriptionCommand(ModelCommandMixin, NodeSelectionCommandMixin, Comma
     """
 
     async def __call__(self, application, arguments):
-        from bluetooth_mesh.bluez import models
-
         model = self.get_model(application)
         destinations = self.get_addresses(application, arguments)
 
@@ -594,8 +585,6 @@ class BindAppKeyCommand(ModelCommandMixin, NodeSelectionCommandMixin, Command):
     """
 
     async def __call__(self, application, arguments):
-        from bluetooth_mesh.bluez import models
-
         model = self.get_model(application)
         destinations = self.get_addresses(application, arguments)
         if not destinations:
@@ -635,8 +624,6 @@ class UnsubscribeCommand(Command):
     """
 
     async def __call__(self, application: Application, arguments):
-        from bluetooth_mesh.bluez import models
-
         model = application.get_model_instance(
             int(arguments["--element"]), getattr(models, arguments["--model"])
         )
@@ -653,12 +640,12 @@ class GatewayConfigurationCommand(ModelCommandMixin, NodeSelectionCommandMixin, 
         "--dns=IP | --ip=IP | --gateway=IP | --netmask=NETMASK | [--get] | "
         "--mtu=MTU --mac=MAC --server=HOST:PORT --reconnect=INTERVAL | "
         "--mtu=MTU --mac=MAC --server=HOST:PORT --reconnect=INTERVAL --dns=IP |"
-        "--mtu=MTU --mac=MAC --server=HOST:PORT --reconnect=INTERVAL --dns=IP --ip=IP --netmask=NETMASK --gateway=IP"
+        "--mtu=MTU --mac=MAC --server=HOST:PORT --reconnect=INTERVAL --dns=IP --ip=IP --netmask=NETMASK --gateway=IP"  # pylint: disable=line-too-long
         """) <uuid>
 
         %(cmd)s --mtu=MTU --mac=MAC --server=HOST:PORT --reconnect=INTERVAL <uuid>
         %(cmd)s --mtu=MTU --mac=MAC --server=HOST:PORT --reconnect=INTERVAL --dns=IP <uuid>
-        %(cmd)s --mtu=MTU --mac=MAC --server=HOST:PORT --reconnect=INTERVAL --dns=IP --ip=IP --netmask=NETMASK --gateway=IP <uuid>
+        %(cmd)s --mtu=MTU --mac=MAC --server=HOST:PORT --reconnect=INTERVAL --dns=IP --ip=IP --netmask=NETMASK --gateway=IP <uuid> # pylint: disable=line-too-long
         %(cmd)s [--get=TYPE] <uuid>
     Options:
         --mtu=MTU               Set MTU size
@@ -688,7 +675,7 @@ class GatewayConfigurationCommand(ModelCommandMixin, NodeSelectionCommandMixin, 
         if len(kwargs) > 1:
             method = partial(model.configuration_set, **self.parse_args(kwargs))
         elif len(kwargs) > 0:
-            ((name, value),) = kwargs.items()
+            ((name, _value),) = kwargs.items()
             method = partial(getattr(model, f"{name}_set"), **self.parse_args(kwargs))
         else:
             method = model.configuration_get
@@ -725,29 +712,16 @@ class GatewayConfigurationCommand(ModelCommandMixin, NodeSelectionCommandMixin, 
             server_addr = "NONE"
 
         parsed = (
-            "revision: {}\n"
-            "mac: {}\n"
-            "mtu: {}\n"
-            "ip: {}/{}\n"
-            "gateway: {}\n"
-            "dns: {}\n"
-            "server: {}:{}\n"
-            "reconnect_interval: {}\n"
-            "dhcp: {}\n"
-            "status_code: {}".format(
-                payload["chip_revision_id"],
-                payload["mac_address"],
-                payload["mtu_size"],
-                payload["ip_address"],
-                payload["netmask"],
-                payload["gateway_ip_address"],
-                payload["dns_ip_address"],
-                server_addr,
-                payload["server_port_number"],
-                payload["reconnect_interval"],
-                str(payload["flags"]),
-                str(payload["status_code"]),
-            )
+            f"revision: {payload['chip_revision_id']}\n"
+            f"mac: {payload['mac_address']}\n"
+            f"mtu: {payload['mtu_size']}\n"
+            f"ip: {payload['ip_address']}/{payload['netmask']}\n"
+            f"gateway: {payload['gateway_ip_address']}\n"
+            f"dns: {payload['dns_ip_address']}\n"
+            f"server: {server_addr}:{payload['server_port_number']}\n"
+            f"reconnect_interval: {payload['reconnect_interval']}\n"
+            f"dhcp: {payload['flags']}\n"
+            f"status_code: {payload['status_code']}"
         )
         print(parsed)
 
@@ -785,19 +759,12 @@ class GatewayPacketsCommand(ModelCommandMixin, NodeSelectionCommandMixin, Comman
     @staticmethod
     def parse_status_packets(payload):
         parsed = (
-            "rx_errors: {}\n"
-            "tx_errors: {}\n"
-            "bandwidth: {}\n"
-            "connection_state: {}\n"
-            "link_status: {}\n"
-            "last_error: {}".format(
-                payload["total_eth_rx_errors"],
-                payload["total_eth_tx_errors"],
-                payload["bandwidth"],
-                str(payload["connection_state"]["conn_state"]),
-                str(payload["connection_state"]["link_status"]),
-                str(payload["connection_state"]["last_error"]),
-            )
+            f"rx_errors: {payload['total_eth_rx_errors']}\n"
+            f"tx_errors: {payload['total_eth_tx_errors']}\n"
+            f"bandwidth: {payload['bandwidth']}\n"
+            f"connection_state: {payload['connection_state']['conn_state']}\n"
+            f"link_status: {payload['connection_state']['link_status']}\n"
+            f"last_error: {payload['connection_state']['last_error']}"
         )
         print(parsed)
 
@@ -851,7 +818,7 @@ class AclCommand(Command):
             await application.acl_revoke(uuid=UUID(hex=arguments["--revoke"]))
 
         for uuid, name, token in self.format(application):
-            print("\t%s (%s): %s" % (uuid, name, token))
+            print(f"\t{uuid} ({name}): {token}")
         print()
 
 
@@ -872,9 +839,9 @@ class LightCommand(ModelCommandMixin, NodeSelectionCommandMixin, Command):
     CTL_ELEMENT = 2
 
     def format(self, data_light, data_ctl):
-        return "lightness {present_lightness}, temperature {present_ctl_temperature}".format(
-            present_lightness=data_light.get("present_lightness") if data_light else None,
-            present_ctl_temperature=data_ctl.get("present_ctl_temperature") if data_ctl else None,
+        return (
+            f"lightness {data_light.get('present_lightness') if data_light else None}, "
+            f"temperature {data_ctl.get('present_ctl_temperature') if data_ctl else None}"
         )
 
     async def __call__(self, application, arguments):
@@ -905,7 +872,7 @@ class LightCommand(ModelCommandMixin, NodeSelectionCommandMixin, Command):
         for address in addresses:
             node = application.network.get_node(address=address)
             param = self.format(results_light[address], results_ctl[address + self.CTL_ELEMENT])
-            print("{}: {}".format(node.name, param))
+            print(f"{node.name}: {param}")
 
 
 class LightRangeCommand(ModelGetCommandMixin, NodeSelectionCommandMixin, Command):
@@ -929,7 +896,7 @@ class LightRangeCommand(ModelGetCommandMixin, NodeSelectionCommandMixin, Command
     async def __call__(self, application, arguments):
         max_lightness_arg = arguments["--max"]
         if max_lightness_arg is None:
-            async for i in super(LightRangeCommand, self).__call__(application, arguments):
+            async for i in super().__call__(application, arguments):
                 yield i
             return
 
@@ -963,10 +930,10 @@ class LightRangeCommand(ModelGetCommandMixin, NodeSelectionCommandMixin, Command
 
                 node = application.network.get_node(address=address)
                 param = self.format(result) if result is not None else None
-                print("{}: {}".format(node.name, param))
+                print(f"{node.name}: {param}")
 
     def format(self, data):
-        return "min={}, max={}".format(data["range_min"], data["range_max"])
+        return f"min={data['range_min']}, max={data['range_max']}"
 
 
 class NetworkTransmissionCommand(ModelCommandMixin, NodeSelectionCommandMixin, Command):
@@ -986,7 +953,7 @@ class NetworkTransmissionCommand(ModelCommandMixin, NodeSelectionCommandMixin, C
     PARAMETER = "net_transmission"
 
     def format(self, data):
-        return "interval={}ms, count={}".format(*data)
+        return f"interval={data[0]}ms, count={data[1]}"
 
     async def __call__(self, application, arguments):
         model = self.get_model(application)
@@ -1005,7 +972,7 @@ class NetworkTransmissionCommand(ModelCommandMixin, NodeSelectionCommandMixin, C
 
             node = application.network.get_node(address=address)
             param = self.format(results) if results is not None else None
-            print("{}: {}".format(node.name, param))
+            print(f"{node.name}: {param}")
 
 
 class CompositionDataCommand(ModelCommandMixin, NodeSelectionCommandMixin, Command):
@@ -1024,22 +991,17 @@ class CompositionDataCommand(ModelCommandMixin, NodeSelectionCommandMixin, Comma
 
             composition = data[address]["data"]
 
-            yield "{}: CID {}, PID {}, VID {}, CRPL {}, Features {:016b}".format(
-                node.name,
-                composition["cid"],
-                composition["pid"],
-                composition["vid"],
-                composition["crpl"],
-                composition["features"],
+            yield (
+                f"{node.name}: CID {composition['cid']}, PID {composition['pid']}, "
+                f"VID {composition['vid']}, CRPL {composition['crpl']}, "
+                f"Features {composition['features']:016b}"
             )
 
             for i, ele in enumerate(composition["elements"]):
-                yield "\tElement {}, location: {}".format(i, ele["location"])
-                yield "\t\t   SIG Models: " + ", ".join(
-                    "{:04x}".format(mod["model_id"]) for mod in ele["sig_models"]
-                )
+                yield f"\tElement {i}, location: {ele['location']}"
+                yield "\t\t   SIG Models: " + ", ".join(f"{mod['model_id']:04x}" for mod in ele["sig_models"])
                 yield "\t\tVendor Models: " + ", ".join(
-                    "{:04x}:{:04x}".format(mod["vendor_id"], mod["model_id"]) for mod in ele["vendor_models"]
+                    f"{mod['vendor_id']:04x}:{mod['model_id']:04x}" for mod in ele["vendor_models"]
                 )
 
 
@@ -1070,7 +1032,7 @@ class GenericOnOffCommand(ModelCommandMixin, Command):
             ]
 
         elif arguments["<groups>"]:
-            command = getattr(model, "{}_unack".format(self.PARAMETER))
+            command = getattr(model, f"{self.PARAMETER}_unack")
             tasks = [
                 command(
                     application.network.get_group_address(self.MODEL, name=name),
@@ -1219,7 +1181,7 @@ class LightExtendedControllerCommand(ModelCommandMixin, NodeSelectionCommandMixi
             node = application.network.get_node(address=address)
             group = application.network.get_node_group(node)
 
-            yield "{} | {}: resume={}, timer={}".format(group, node.name, resume, timer)
+            yield f"{group} | {node.name}: resume={resume}, timer={timer}"
 
 
 class SensorCommand(ModelCommandMixin, NodeSelectionCommandMixin, Command):
@@ -1247,16 +1209,16 @@ class SensorCommand(ModelCommandMixin, NodeSelectionCommandMixin, Command):
                 node = application.network.get_node(address=address)
                 group = application.network.get_node_group(node)
 
-                yield "{} | {}:\n{}".format(group, node.name, descriptor)
+                yield f"{group} | {node.name}:\n{descriptor}"
 
             return
 
-        property = arguments.get("--property")
-        if property:
+        property_name = arguments.get("--property")
+        if property_name:
             try:
-                property_id = getattr(PropertyID, property)
+                property_id = getattr(PropertyID, property_name)
             except AttributeError:
-                property_id = PropertyID(int(property, 16))
+                property_id = PropertyID(int(property_name, 16))
 
             results = await model.get_sensor(addresses, app_index=0, property_id=property_id)
 
@@ -1264,7 +1226,7 @@ class SensorCommand(ModelCommandMixin, NodeSelectionCommandMixin, Command):
                 node = application.network.get_node(address=address)
                 group = application.network.get_node_group(node)
 
-                yield "{} | {}: {!r}".format(group, node.name, status)
+                yield f"{group} | {node.name}: {status!r}"
 
             return
 
@@ -1299,11 +1261,10 @@ class TimeGetCommand(ModelCommandMixin, NodeSelectionCommandMixin, Command):
             elif pkt_time["date"] is None:
                 yield f"{group} | {node.name}\nTime is not set!"
             else:
-                yield "{} | {}:\n{} +- {} s".format(
-                    group,
-                    node.name,
-                    pkt_time["date"].strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
-                    pkt_time["uncertainty"].total_seconds(),
+                yield (
+                    f"{group} | {node.name}:\n"
+                    f"{pkt_time['date'].strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} "
+                    f"+- {pkt_time['uncertainty'].total_seconds()} s"
                 )
 
 
@@ -1342,11 +1303,10 @@ class TimeCurrentSetCommand(ModelCommandMixin, NodeSelectionCommandMixin, Comman
             elif pkt_time["date"] is None:
                 yield f"{group} | {node.name}\nTime is not set!"
             else:
-                yield "{} | {}:\n{} +- {} s".format(
-                    group,
-                    node.name,
-                    pkt_time["date"].strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
-                    pkt_time["uncertainty"].total_seconds(),
+                yield (
+                    f"{group} | {node.name}:\n"
+                    f"{pkt_time['date'].strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} "
+                    f"+- {pkt_time['uncertainty'].total_seconds()} s"
                 )
 
 
@@ -1416,7 +1376,7 @@ class HelpCommand(Command):
 
     async def __call__(self, application, arguments):
         for cmd in sorted(application.commands.values()):
-            yield "\t{}".format(cmd.CMD)
+            yield f"\t{cmd.CMD}"
 
 
 class PrimaryElement(Element):
@@ -1444,7 +1404,9 @@ class PrimaryElement(Element):
 application_mixins = itertools.chain(*get_plugin_manager().hook.application_mixins())
 
 
-class MeshCommandLine(*application_mixins, Application):
+class MeshCommandLine(
+    *application_mixins, Application
+):  # pylint: disable=too-many-instance-attributes, disable=too-many-ancestors
     PATH = "/com/silvair/meshcli/v10"
     VERSION = f"bluetooth-mesh-bluez {__version__}"
 
@@ -1508,9 +1470,81 @@ class MeshCommandLine(*application_mixins, Application):
         )
         self.commands = {cmd.CMD: cmd() for cmd in self.COMMANDS}
         self._tid = 0
+        self.network = None
 
     def get_cache_args(self):
         return (f"{self.config_dir}/cache",), {}
+
+    @staticmethod
+    def _coerce_network_key(value):
+        return value if isinstance(value, NetworkKey) else NetworkKey(value)
+
+    @staticmethod
+    def _coerce_application_key(value):
+        return value if isinstance(value, ApplicationKey) else ApplicationKey(value)
+
+    @property
+    def primary_net_key(self):
+        return self.subnet_keys[0]
+
+    @property
+    def subnet_keys(self):
+        raw_keys = getattr(self.network, "subnet_keys", None)
+        if raw_keys is not None:
+            return [(index, self._coerce_network_key(key)) for index, key in raw_keys]
+
+        raw_keys = getattr(self.network, "network_keys", None)
+        if raw_keys is None:
+            raise AttributeError("Network does not expose network keys")
+
+        if isinstance(raw_keys, dict):
+            items = raw_keys.items()
+        else:
+            items = enumerate(raw_keys)
+
+        return [(index, self._coerce_network_key(key)) for index, key in items]
+
+    @property
+    def app_keys(self):
+        raw_keys = getattr(self.network, "app_keys", None)
+        if raw_keys is None:
+            raw_keys = getattr(self.network, "application_keys", None)
+
+        if raw_keys is None:
+            raise AttributeError("Network does not expose application keys")
+
+        return [(index, bound, self._coerce_application_key(key)) for index, bound, key in raw_keys]
+
+    def private_key(self) -> bytes:
+        raise NotImplementedError("meshcli does not support OOB private key provisioning")
+
+    def public_key(self) -> bytes:
+        raise NotImplementedError("meshcli does not support OOB public key provisioning")
+
+    def display_string(self, value: str):
+        print(value)
+
+    def display_numeric(self, kind: str, number: int):
+        print(f"{kind}: {number}")
+
+    def prompt_static(self, kind: str) -> bytes:
+        value = input(f"{kind}: ").strip()
+        return bytes.fromhex(value)
+
+    def prompt_numeric(self, kind: str) -> int:
+        return int(input(f"{kind}: ").strip())
+
+    def scan_result(self, rssi: int, data: bytes, options: dict):
+        self.logger.info("Scan result: rssi=%s data=%s options=%s", rssi, data.hex(), options)
+
+    def request_prov_data(self, count: int):
+        raise NotImplementedError("meshcli does not support provisioning new nodes")
+
+    def add_node_complete(self, uuid: bytes, unicast: int, count: int):
+        self.logger.info("Node added: uuid=%s unicast=%04x count=%d", UUID(bytes=uuid), unicast, count)
+
+    def add_node_failed(self, uuid: bytes, reason: str):
+        self.logger.error("Node add failed: uuid=%s reason=%s", UUID(bytes=uuid), reason)
 
     @property
     @lru_cache(maxsize=1)
@@ -1525,7 +1559,7 @@ class MeshCommandLine(*application_mixins, Application):
                 dev_key.write(key.bytes)
             return key
 
-    async def get_network(self, get_address=True, environment="preprod", partner_id="silvair"):
+    async def get_network(self, get_address=True, _environment="preprod", _partner_id="silvair"):
         return await super().get_network(get_address, self.arguments["--env"], self.arguments["--partner"])
 
     async def add_keys(self):
@@ -1559,7 +1593,7 @@ class MeshCommandLine(*application_mixins, Application):
         async with self:
             await self._run(commands)
 
-    async def _run(self, commands):
+    async def _run(self, commands):  # pylint: disable=too-many-branches
         await self.connect(socket_path=f"{self.config_dir}/{self.uuid}.socket")
         await self.add_keys()
         self.logger.info("Loaded network %s, %d nodes", self.network, len(self.network.nodes))
@@ -1568,7 +1602,7 @@ class MeshCommandLine(*application_mixins, Application):
 
         for line in commands:
             if line is None:
-                line = await self.session.prompt_async("{}> ".format(self.uuid))
+                line = await self.session.prompt_async(f"{self.uuid}> ")
 
                 if not line.strip():
                     continue
@@ -1580,12 +1614,12 @@ class MeshCommandLine(*application_mixins, Application):
             handler = self.commands.get(cmd, None)
 
             if not handler:
-                print("Command not found: {}".format(cmd))
+                print(f"Command not found: {cmd}")
                 continue
 
             usage = handler.get_usage()
             try:
-                arguments = docopt(usage, argv, help=False)
+                arguments = docopt(usage, argv)
 
                 lines = []
                 result = handler(self, arguments)
@@ -1602,14 +1636,14 @@ class MeshCommandLine(*application_mixins, Application):
                 if lines:
                     print("\n".join(lines))
 
-            except Exception:
-                print(traceback.format_exc())
             except futures.TimeoutError:
-                print("Command timed out: {}".format(cmd))
+                print(f"Command timed out: {cmd}")
             except KeyboardInterrupt:
                 pass
             except DocoptExit:
                 print(usage.strip("\n").rstrip())
+            except Exception:  # pylint: disable=broad-exception-caught
+                print(traceback.format_exc())
 
 
 def main():
