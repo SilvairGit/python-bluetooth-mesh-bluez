@@ -59,7 +59,7 @@ async def test_signal_cb_exception():
     cb_ok = AsyncMock()
 
     async def cb_exception(*args, **kwargs):
-        raise Exception
+        raise ValueError
 
     ts = Signal()
     ts.connect(cb_ok)

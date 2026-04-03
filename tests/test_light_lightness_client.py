@@ -17,9 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
-#
-# pylint: disable=redefined-outer-name, invalid-name
+
 from unittest import mock
 from unittest.mock import ANY, AsyncMock, call, patch
 
@@ -41,8 +39,8 @@ class LLElementMock(Element):
     MODELS = [LightLightnessClient]
 
 
-@pytest.fixture
-def light_lightness_client(element_path) -> LightLightnessClient:
+@pytest.fixture(name="light_lightness_client")
+def fixture_light_lightness_client(element_path) -> LightLightnessClient:
     element = LLElementMock(mock.MagicMock(), mock.MagicMock())
     element.path = element_path
     return LightLightnessClient(element)
@@ -76,13 +74,12 @@ async def test_sending_set_lightness_repeated_6_times_with_intervals_by_default(
     light_lightness_client.repeat.assert_awaited_once_with(ANY, retransmissions=6, send_interval=0.075)
 
 
-# pylint: disable=protected-access
 @pytest.mark.asyncio
 @patch("asyncio.sleep", new=AsyncMock())
 async def test_set_lightness_range_calls_node_interface_with_appropriate_arguments(
     light_lightness_client, destination, app_index, element_path
 ):
-    light_lightness_client._node_interface.send = AsyncMock()
+    light_lightness_client._node_interface.send = AsyncMock()  # pylint: disable=protected-access
 
     await light_lightness_client.set_lightness_range_unack(
         destination=destination, app_index=app_index, min_lightness=0, max_lightness=100
@@ -97,18 +94,17 @@ async def test_set_lightness_range_calls_node_interface_with_appropriate_argumen
             },
         }
     )
-    light_lightness_client._node_interface.send.assert_awaited_with(
+    light_lightness_client._node_interface.send.assert_awaited_with(  # pylint: disable=protected-access
         element_path, destination, app_index, data
     )
 
 
-# pylint: disable=protected-access
 @pytest.mark.asyncio
 @patch("asyncio.sleep", new=AsyncMock())
 async def test_set_lightness_calls_node_interface_with_appropriate_arguments(
     light_lightness_client, destination, app_index, element_path
 ):
-    light_lightness_client._node_interface.send = AsyncMock()
+    light_lightness_client._node_interface.send = AsyncMock()  # pylint: disable=protected-access
 
     await light_lightness_client.set_lightness_unack(
         destination=destination,
@@ -123,11 +119,12 @@ async def test_set_lightness_calls_node_interface_with_appropriate_arguments(
         LightLightnessMessage.build(
             {
                 "opcode": LightLightnessOpcode.LIGHT_LIGHTNESS_SET_UNACKNOWLEDGED,
-                "params": dict(lightness=0, tid=0, transition_time=0, delay=d),
+                "params": {"lightness": 0, "tid": 0, "transition_time": 0, "delay": d},
             }
         )
         for d in [0.50, 0.45, 0.40, 0.35, 0.30, 0.25]
     ]
-    assert light_lightness_client._node_interface.send.await_args_list == [
-        call(element_path, destination, app_index, frame) for frame in frames
-    ]
+    assert (
+        light_lightness_client._node_interface.send.await_args_list  # pylint: disable=protected-access
+        == [call(element_path, destination, app_index, frame) for frame in frames]
+    )

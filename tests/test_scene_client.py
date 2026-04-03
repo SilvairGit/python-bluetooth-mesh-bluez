@@ -17,9 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
-#
-# pylint: disable=W0621, C0103
+
 from unittest import mock
 from unittest.mock import ANY, AsyncMock, patch
 
@@ -35,8 +33,8 @@ class SceneElementMock(Element):
     MODELS = [SceneClient]
 
 
-@pytest.fixture
-def scene_client(element_path) -> SceneClient:
+@pytest.fixture(name="scene_client")
+def fixture_scene_client(element_path) -> SceneClient:
     element = SceneElementMock(mock.MagicMock(), mock.MagicMock())
     element.path = element_path
     return SceneClient(element)
@@ -54,18 +52,19 @@ async def test_sending_scene_recall_repeated_6_times_with_intervals(scene_client
     scene_client.repeat.assert_awaited_once_with(ANY, retransmissions=6, send_interval=0.075)
 
 
-# pylint: disable=W0212
 @pytest.mark.asyncio
 @patch("asyncio.sleep", new=AsyncMock())
 async def test_scene_recall_calls_node_interface_with_appropriate_arguments(
     scene_client, destination, app_index, element_path
 ):
-    scene_client._node_interface.send = AsyncMock()
+    scene_client._node_interface.send = AsyncMock()  # pylint: disable=protected-access
 
     await scene_client.recall_scene_unack(destination, app_index, scene_number=1, transition_time=0)
 
     data = b"\x82C\x01\x00\x00\x00\x18"
-    scene_client._node_interface.send.assert_awaited_with(element_path, destination, app_index, data)
+    scene_client._node_interface.send.assert_awaited_with(  # pylint: disable=protected-access
+        element_path, destination, app_index, data
+    )
 
 
 @pytest.mark.asyncio
@@ -84,5 +83,5 @@ async def test_scene_recall_increases_tid(scene_client, number_of_scene_recalls,
         ANY,
         app_index=ANY,
         opcode=ANY,
-        params=dict(scene_number=ANY, tid=next_tid, transition_time=ANY, delay=ANY),
+        params={"scene_number": ANY, "tid": next_tid, "transition_time": ANY, "delay": ANY},
     )

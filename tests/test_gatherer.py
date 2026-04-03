@@ -46,18 +46,18 @@ async def test_gatherer_timeout():
     aws = [Future(), Future()]
 
     async for status in Gatherer(aws, timeout=0.1):
-        key, val = status
+        _key, val = status
         assert isinstance(val, TimeoutError)
 
 
 @pytest.mark.asyncio
 async def test_gatherer_exception():
     async def raises():
-        raise Exception("ex")
+        raise ValueError("ex")
 
     aws = [raises()]
 
     async for status in Gatherer(aws, timeout=0.1):
         stat, result = status
         assert stat == aws[0]
-        assert isinstance(result, Exception)
+        assert isinstance(result, ValueError)

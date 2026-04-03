@@ -73,7 +73,7 @@ async def test_tasklet_grouping(event_loop: AbstractEventLoop):
         return group
 
     @tasklet
-    async def suspend(e: Event, group: int):
+    async def suspend(e: Event, **_kwargs):
         await e.wait()
 
     suspend.group_by = group_by
