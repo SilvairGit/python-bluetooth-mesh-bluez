@@ -22,9 +22,7 @@
 # pylint: disable=W0621, C0103
 import pytest
 from unittest import mock
-
-import asynctest
-from asynctest import ANY
+from unittest.mock import ANY, AsyncMock, patch
 
 from bluetooth_mesh.bluez.models import SceneClient
 from bluetooth_mesh.bluez.application import Element
@@ -44,11 +42,11 @@ def scene_client(element_path) -> SceneClient:
 
 
 @pytest.mark.asyncio
-@asynctest.patch("asyncio.sleep", new=asynctest.CoroutineMock())
+@patch("asyncio.sleep", new=AsyncMock())
 async def test_sending_scene_recall_repeated_6_times_with_intervals(
     scene_client, destination, app_index
 ):
-    scene_client.repeat = asynctest.CoroutineMock()
+    scene_client.repeat = AsyncMock()
 
     await scene_client.recall_scene_unack(
         destination=destination, app_index=app_index, scene_number=1, transition_time=0
@@ -61,11 +59,11 @@ async def test_sending_scene_recall_repeated_6_times_with_intervals(
 
 # pylint: disable=W0212
 @pytest.mark.asyncio
-@asynctest.patch("asyncio.sleep", new=asynctest.CoroutineMock())
+@patch("asyncio.sleep", new=AsyncMock())
 async def test_scene_recall_calls_node_interface_with_appropriate_arguments(
     scene_client, destination, app_index, element_path
 ):
-    scene_client._node_interface.send = asynctest.CoroutineMock()
+    scene_client._node_interface.send = AsyncMock()
 
     await scene_client.recall_scene_unack(
         destination, app_index, scene_number=1, transition_time=0
@@ -78,7 +76,7 @@ async def test_scene_recall_calls_node_interface_with_appropriate_arguments(
 
 
 @pytest.mark.asyncio
-@asynctest.patch("asyncio.sleep", new=asynctest.CoroutineMock())
+@patch("asyncio.sleep", new=AsyncMock())
 @pytest.mark.parametrize(
     "number_of_scene_recalls, next_tid",
     [pytest.param(1, 0), pytest.param(255, 254), pytest.param(256, 0)],
@@ -86,7 +84,7 @@ async def test_scene_recall_calls_node_interface_with_appropriate_arguments(
 async def test_scene_recall_increases_tid(
     scene_client, number_of_scene_recalls, next_tid
 ):
-    scene_client.send_app = asynctest.CoroutineMock()
+    scene_client.send_app = AsyncMock()
 
     for _ in range(number_of_scene_recalls):
         await scene_client.recall_scene_unack(

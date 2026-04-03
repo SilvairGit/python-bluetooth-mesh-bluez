@@ -26,7 +26,6 @@ from asyncio import Future
 from functools import partial
 from unittest.mock import MagicMock, call
 
-import asynctest
 import pytest
 
 from bluetooth_mesh.bluez.models import Model
@@ -36,7 +35,7 @@ from bluetooth_mesh.messages.generic.onoff import GenericOnOffOpcode
 
 @pytest.fixture
 def node_interface():
-    return asynctest.MagicMock(NodeInterface)
+    return MagicMock(spec=NodeInterface)
 
 
 @pytest.fixture
@@ -231,10 +230,7 @@ async def test_repeat(
     )
     await model.repeat(request, send_interval=0.0001)
     node_interface.send.assert_has_calls(
-        [
-            asynctest.call(element_path, destination, app_index, b"\x82\x04\x00")
-            for _ in range(6)
-        ]
+        [call(element_path, destination, app_index, b"\x82\x04\x00") for _ in range(6)]
     )
     assert node_interface.send.call_count == 6
 

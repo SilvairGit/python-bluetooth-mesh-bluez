@@ -13,18 +13,6 @@ files = [
 ]
 
 [[package]]
-name = "asynctest"
-version = "0.13.0"
-description = "Enhance the standard unittest package with features for testing asyncio libraries"
-optional = false
-python-versions = ">=3.5"
-groups = ["dev"]
-files = [
-    {file = "asynctest-0.13.0-py3-none-any.whl", hash = "sha256:5da6118a7e6d6b54d83a8f7197769d046922a44d2a99c21382f0a6e4fadae676"},
-    {file = "asynctest-0.13.0.tar.gz", hash = "sha256:c27862842d15d83e6a34eb0b2866c323880eb3a75e4485b079ea11748fd77fac"},
-]
-
-[[package]]
 name = "bitarray"
 version = "3.8.0"
 description = "efficient arrays of booleans -- C extension"
@@ -496,6 +484,19 @@ graph = ["objgraph (>=1.7.2)"]
 profile = ["gprof2dot (>=2022.7.29)"]
 
 [[package]]
+name = "docopt-ng"
+version = "0.9.0"
+description = "Jazzband-maintained fork of docopt, the humane command line arguments parser."
+optional = true
+python-versions = ">=3.7"
+groups = ["main"]
+markers = "extra == \"cli\""
+files = [
+    {file = "docopt_ng-0.9.0-py3-none-any.whl", hash = "sha256:bfe4c8b03f9fca424c24ee0b4ffa84bf7391cb18c29ce0f6a8227a3b01b81ff9"},
+    {file = "docopt_ng-0.9.0.tar.gz", hash = "sha256:91c6da10b5bb6f2e9e25345829fb8278c78af019f6fc40887ad49b060483b1d7"},
+]
+
+[[package]]
 name = "ecdsa"
 version = "0.19.1"
 description = "ECDSA cryptographic signature library (pure python)"
@@ -890,9 +891,9 @@ files = [
 ]
 
 [extras]
-cli = ["prompt-toolkit"]
+cli = ["docopt-ng", "prompt-toolkit"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.14,<3.15"
-content-hash = "c39ad87f653705cb5f11ae332f357b63840493cf460a1b8549414494602b126c"
+content-hash = "8c6eb07f1e7e52fc330c16fc183a19fbef5c9f6502c14bd273c7ee2674c5ee9a"
