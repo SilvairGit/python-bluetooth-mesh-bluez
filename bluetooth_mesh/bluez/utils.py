@@ -22,21 +22,11 @@
 import asyncio
 import itertools
 import logging
-from asyncio.tasks import Task
-from concurrent.futures._base import CancelledError
+from asyncio import CancelledError, Task, create_task
 from contextlib import suppress
 from functools import wraps
 from inspect import isawaitable
-from typing import Any, Awaitable, Callable, Dict, Hashable, Iterable, Mapping, Optional, Tuple, TypeVar
-
-from typing_extensions import Protocol
-
-try:
-    from asyncio import create_task
-except ImportError:
-    from asyncio import ensure_future
-
-    create_task = ensure_future
+from typing import Any, Awaitable, Callable, Dict, Hashable, Iterable, Mapping, Optional, Protocol, Tuple, TypeVar
 
 ParsedMeshMessage = Mapping[str, Any]
 MessageDescription = Mapping[str, Any]

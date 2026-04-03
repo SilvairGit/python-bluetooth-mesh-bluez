@@ -19,9 +19,17 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 #
+import asyncio
+
 import pytest
+import pytest_asyncio
 
 from bluetooth_mesh.messages.generic.onoff import GenericOnOffOpcode
+
+
+@pytest_asyncio.fixture
+async def event_loop():
+    return asyncio.get_running_loop()
 
 
 @pytest.fixture()

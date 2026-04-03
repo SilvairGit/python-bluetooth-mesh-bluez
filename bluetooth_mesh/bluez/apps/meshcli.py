@@ -32,12 +32,12 @@ from contextlib import suppress
 from datetime import datetime, timedelta
 from functools import lru_cache, partial
 from itertools import cycle
+from importlib.metadata import version
 from uuid import UUID
 
 from docopt import DocoptExit, docopt
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import Completer, Completion
-from prompt_toolkit.eventloop import use_asyncio_event_loop
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.patch_stdout import patch_stdout
 
@@ -64,6 +64,8 @@ from bluetooth_mesh.bluez.models import (
     SensorClient,
     TimeClient,
 )
+
+__version__ = version("bluetooth-mesh-bluez")
 
 plugin_manager = get_plugin_manager()
 
@@ -1444,6 +1446,7 @@ application_mixins = itertools.chain(*get_plugin_manager().hook.application_mixi
 
 class MeshCommandLine(*application_mixins, Application):
     PATH = "/com/silvair/meshcli/v10"
+    VERSION = f"bluetooth-mesh-bluez {__version__}"
 
     COMMANDS = [
         HelpCommand,
@@ -1565,7 +1568,7 @@ class MeshCommandLine(*application_mixins, Application):
 
         for line in commands:
             if line is None:
-                line = await self.session.prompt("{}> ".format(self.uuid), async_=True)
+                line = await self.session.prompt_async("{}> ".format(self.uuid))
 
                 if not line.strip():
                     continue
@@ -1634,8 +1637,7 @@ def main():
             -h --help                      Show this help message and exit
             --version                      Show version and exit
     """
-    use_asyncio_event_loop()
-    arguments = docopt(doc, version="stat_checker 0.5")
+    arguments = docopt(doc, version=MeshCommandLine.VERSION)
 
     logging.basicConfig(
         format="%(asctime)s %(name)-40s %(levelname)-8s %(filename)15s:%(lineno)3s  %(message)s",
@@ -1643,8 +1645,12 @@ def main():
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     mesh_cli = MeshCommandLine(loop, arguments)
 
-    with suppress(EOFError, KeyboardInterrupt), patch_stdout():
-        loop.run_until_complete(mesh_cli.run(arguments.get("<command>")))
+    try:
+        with suppress(EOFError, KeyboardInterrupt), patch_stdout():
+            loop.run_until_complete(mesh_cli.run(arguments.get("<command>")))
+    finally:
+        loop.close()

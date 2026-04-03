@@ -19,17 +19,16 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 #
-
 import pytest
-from asynctest import CoroutineMock, MagicMock, call
+from unittest.mock import AsyncMock, MagicMock, call
 
 from bluetooth_mesh.bluez.utils import Signal
 
 
 @pytest.mark.asyncio
 async def test_signal():
-    cb1 = CoroutineMock()
-    cb2 = CoroutineMock()
+    cb1 = AsyncMock()
+    cb2 = AsyncMock()
 
     ts = Signal()
     ts.connect(cb1)
@@ -42,8 +41,8 @@ async def test_signal():
 
 @pytest.mark.asyncio
 async def test_signal_keywords():
-    cb1 = CoroutineMock()
-    cb2 = CoroutineMock()
+    cb1 = AsyncMock()
+    cb2 = AsyncMock()
 
     ts = Signal()
     ts.connect(cb1)
@@ -56,7 +55,7 @@ async def test_signal_keywords():
 
 @pytest.mark.asyncio
 async def test_signal_cb_exception():
-    cb_ok = CoroutineMock()
+    cb_ok = AsyncMock()
 
     async def cb_exception(*args, **kwargs):
         raise Exception

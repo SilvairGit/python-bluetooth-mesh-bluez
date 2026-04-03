@@ -1,8 +1,4 @@
-from asyncio import Task
-from asyncio.events import AbstractEventLoop
-from asyncio.futures import Future
-from asyncio.locks import Event
-from asyncio.tasks import gather, wait_for
+from asyncio import AbstractEventLoop, Event, Future, Task, gather, wait_for
 from functools import partial
 
 import pytest
