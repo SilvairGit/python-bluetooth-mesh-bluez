@@ -32,44 +32,44 @@ async def event_loop():
     return asyncio.get_running_loop()
 
 
-@pytest.fixture()
-def status_parsed():
-    return dict(
-        opcode=GenericOnOffOpcode.GENERIC_ONOFF_STATUS,
-        generic_onoff_status=dict(present_onoff=0),
-    )
+@pytest.fixture(name="status_parsed")
+def fixture_status_parsed():
+    return {
+        "opcode": GenericOnOffOpcode.GENERIC_ONOFF_STATUS,
+        "generic_onoff_status": {"present_onoff": 0},
+    }
 
 
-@pytest.fixture()
-def status_encoded():
+@pytest.fixture(name="status_encoded")
+def fixture_status_encoded():
     return b"\x82\x04\x00"
 
 
-@pytest.fixture()
-def get_encoded():
+@pytest.fixture(name="get_encoded")
+def fixture_get_encoded():
     return b"\x82\x01"
 
 
-@pytest.fixture()
-def source():
+@pytest.fixture(name="source")
+def fixture_source():
     return 0x0001
 
 
-@pytest.fixture()
-def destination():
+@pytest.fixture(name="destination")
+def fixture_destination():
     return 0x0010
 
 
-@pytest.fixture()
-def app_index():
+@pytest.fixture(name="app_index")
+def fixture_app_index():
     return 0
 
 
-@pytest.fixture()
-def net_index():
+@pytest.fixture(name="net_index")
+def fixture_net_index():
     return 0
 
 
-@pytest.fixture
-def element_path():
+@pytest.fixture(name="element_path")
+def fixture_element_path():
     return "test_element_path_string"

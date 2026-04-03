@@ -40,12 +40,12 @@ from bluetooth_mesh.bluez.utils import construct_match
             [1, 2, ..., 4],
         ),
         pytest.param(
-            dict(a=42, b=[1, 2, 3]),
-            dict(a=42, b=[1, 2, 3]),
+            {"a": 42, "b": [1, 2, 3]},
+            {"a": 42, "b": [1, 2, 3]},
         ),
         pytest.param(
-            dict(a=42, b=[1, 2, 3]),
-            dict(b=[1, 2, 3]),
+            {"a": 42, "b": [1, 2, 3]},
+            {"b": [1, 2, 3]},
         ),
     ],
 )
@@ -69,8 +69,8 @@ def test_construct_match(received, expected):
             [1, 2, ...],
         ),
         pytest.param(
-            dict(a=42, b=[1, 2, 3]),
-            dict(a=42, b=[1, 3]),
+            {"a": 42, "b": [1, 2, 3]},
+            {"a": 42, "b": [1, 3]},
         ),
     ],
 )

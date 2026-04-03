@@ -17,9 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
-#
-# pylint: disable=W0621
 
 import asyncio
 from asyncio import Future
@@ -33,21 +30,21 @@ from bluetooth_mesh.bluez.models import Model
 from bluetooth_mesh.messages.generic.onoff import GenericOnOffOpcode
 
 
-@pytest.fixture
-def node_interface():
+@pytest.fixture(name="node_interface")
+def fixture_node_interface():
     return MagicMock(spec=NodeInterface)
 
 
-@pytest.fixture
-def element_mock(element_path, node_interface):
+@pytest.fixture(name="element_mock")
+def fixture_element_mock(element_path, node_interface):
     element_mock = MagicMock()
     element_mock.application.node_interface = node_interface
     element_mock.path = element_path
     return element_mock
 
 
-@pytest.fixture()
-def model(element_mock):
+@pytest.fixture(name="model")
+def fixture_model(element_mock):
     class MockModel(Model):
         MODEL_ID = (None, 0x1001)
         OPCODES = {GenericOnOffOpcode.GENERIC_ONOFF_STATUS}
@@ -64,7 +61,7 @@ async def test_single_expect(model, status_parsed, source, app_index):
 
 @pytest.mark.asyncio
 async def test_wildcard_expect(model, status_parsed, source, app_index):
-    status = model.expect_app(source, app_index, False, status_parsed["opcode"], dict(present_onoff=...))
+    status = model.expect_app(source, app_index, False, status_parsed["opcode"], {"present_onoff": ...})
     model.message_received(source, app_index, False, status_parsed)
     assert status_parsed == await status
 
@@ -125,7 +122,7 @@ async def test_dev_single_expect(model, status_parsed, source, net_index):
 
 @pytest.mark.asyncio
 async def test_dev_wildcard_expect(model, status_parsed, source, net_index):
-    status = model.expect_dev(source, net_index, status_parsed["opcode"], dict(present_onoff=...))
+    status = model.expect_dev(source, net_index, status_parsed["opcode"], {"present_onoff": ...})
     model.dev_key_message_received(source, True, net_index, status_parsed)
     assert status_parsed == await status
 
@@ -270,7 +267,9 @@ async def test_bulk_query(model, status_parsed, destination, app_index, element_
 
 
 @pytest.mark.asyncio
-async def test_bulk_query_timeout(model, status_parsed, destination, app_index, element_path, node_interface):
+async def test_bulk_query_timeout(
+    model, status_parsed, _destination, app_index, _element_path, _node_interface
+):
     async def request(dest):
         await model.send_app(
             dest,
@@ -279,7 +278,7 @@ async def test_bulk_query_timeout(model, status_parsed, destination, app_index, 
             status_parsed["generic_onoff_status"],
         )
 
-    async def callback(address, result, done, total):
+    async def callback(address, result, done, _total):
         if address == 10:
             assert len(done) == 1
             assert result == {

@@ -17,9 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
-#
-# pylint: disable=W0621
 
 from unittest.mock import MagicMock
 
@@ -51,15 +48,15 @@ class MockVenforModel(MagicMock):
         MockVenforModel.INSTANCES.append(self)
 
 
-@pytest.fixture
-def model_mocks():
+@pytest.fixture(name="model_mocks")
+def fixture_model_mocks():
     MockModel.INSTANCES = []
     MockVenforModel.INSTANCES = []
     return {MockModel, MockVenforModel}
 
 
-@pytest.fixture
-def element(model_mocks):
+@pytest.fixture(name="element")
+def fixture_element(model_mocks):
     class MockElement(Element):
         MODELS = model_mocks
         LOCATION = GATTNamespaceDescriptor.FORTY_SECOND
@@ -93,13 +90,13 @@ def test_other_opcode_dev_message_received(element, source, net_index, get_encod
 
 
 def test_update_model_configuration(element):
-    config = dict()
+    config = {}
     model_config = element.update_model_configuration((MockModel.MODEL_ID[0], MockModel.MODEL_ID[1]), config)
     MockModel.INSTANCES[0].update_configuration.assert_called_once_with(model_config)
 
 
 def test_update_vendor_model_configuration(element):
-    config = dict()
+    config = {}
     model_config = element.update_model_configuration(
         (MockVenforModel.MODEL_ID[0], MockVenforModel.MODEL_ID[1]), config
     )
