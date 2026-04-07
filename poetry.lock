@@ -484,19 +484,6 @@ graph = ["objgraph (>=1.7.2)"]
 profile = ["gprof2dot (>=2022.7.29)"]
 
 [[package]]
-name = "docopt-ng"
-version = "0.9.0"
-description = "Jazzband-maintained fork of docopt, the humane command line arguments parser."
-optional = true
-python-versions = ">=3.7"
-groups = ["main"]
-markers = "extra == \"cli\""
-files = [
-    {file = "docopt_ng-0.9.0-py3-none-any.whl", hash = "sha256:bfe4c8b03f9fca424c24ee0b4ffa84bf7391cb18c29ce0f6a8227a3b01b81ff9"},
-    {file = "docopt_ng-0.9.0.tar.gz", hash = "sha256:91c6da10b5bb6f2e9e25345829fb8278c78af019f6fc40887ad49b060483b1d7"},
-]
-
-[[package]]
 name = "ecdsa"
 version = "0.19.1"
 description = "ECDSA cryptographic signature library (pure python)"
@@ -643,22 +630,6 @@ files = [
 [package.extras]
 dev = ["pre-commit", "tox"]
 testing = ["coverage", "pytest", "pytest-benchmark"]
-
-[[package]]
-name = "prompt-toolkit"
-version = "3.0.52"
-description = "Library for building powerful interactive command lines in Python"
-optional = true
-python-versions = ">=3.8"
-groups = ["main"]
-markers = "extra == \"cli\""
-files = [
-    {file = "prompt_toolkit-3.0.52-py3-none-any.whl", hash = "sha256:9aac639a3bbd33284347de5ad8d68ecc044b91a762dc39b7c21095fcd6a19955"},
-    {file = "prompt_toolkit-3.0.52.tar.gz", hash = "sha256:28cde192929c8e7321de85de1ddbe736f1375148b02f2e17edd840042b1be855"},
-]
-
-[package.dependencies]
-wcwidth = "*"
 
 [[package]]
 name = "pycparser"
@@ -877,23 +848,7 @@ files = [
     {file = "tomlkit-0.14.0.tar.gz", hash = "sha256:cf00efca415dbd57575befb1f6634c4f42d2d87dbba376128adb42c121b87064"},
 ]
 
-[[package]]
-name = "wcwidth"
-version = "0.6.0"
-description = "Measures the displayed width of unicode strings in a terminal"
-optional = true
-python-versions = ">=3.8"
-groups = ["main"]
-markers = "extra == \"cli\""
-files = [
-    {file = "wcwidth-0.6.0-py3-none-any.whl", hash = "sha256:1a3a1e510b553315f8e146c54764f4fb6264ffad731b3d78088cdb1478ffbdad"},
-    {file = "wcwidth-0.6.0.tar.gz", hash = "sha256:cdc4e4262d6ef9a1a57e018384cbeb1208d8abbc64176027e2c2455c81313159"},
-]
-
-[extras]
-cli = ["docopt-ng", "prompt-toolkit"]
-
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.14,<3.15"
-content-hash = "8c6eb07f1e7e52fc330c16fc183a19fbef5c9f6502c14bd273c7ee2674c5ee9a"
+content-hash = "238560553aed39fdaa0f7bc0dd52fd611f3bf108aee4ef11606d87447fb5e527"

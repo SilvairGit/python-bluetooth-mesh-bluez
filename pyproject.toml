@@ -35,22 +35,10 @@ classifiers = [
     "Topic :: System :: Networking",
 ]
 
-[project.optional-dependencies]
-cli = [
-    "docopt-ng>=0.9.0,<0.10.0",
-    "prompt-toolkit>=3.0.52,<3.1.0"
-]
-
 [tool.poetry]
 package-mode = true
 requires-poetry = ">=2.2.1"
 packages = [{ include = "bluetooth_mesh" }]
-
-[project.scripts]
-meshcli = "bluetooth_mesh.bluez.apps.meshcli:main"
-
-[project.entry-points."bluetooth_mesh"]
-bluetooth_mesh = "bluetooth_mesh.bluez.apps.mixins"
 
 [tool.poetry.group.dev.dependencies]
 black = "^26.3.1"
