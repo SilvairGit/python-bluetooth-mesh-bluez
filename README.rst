@@ -18,8 +18,7 @@ Bluetooth mesh network using BlueZ's bluetooth-meshd.
 What is this thing?
 --------------------
 
-This library provides a high-level async API for interacting with BlueZ mesh stack
-via D-Bus interface.
+This library provides a high-level async API for interacting with BlueZ mesh stack via D-Bus interface.
 
 https://www.bluetooth.com/specifications/mesh-specifications
 
@@ -27,24 +26,28 @@ https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/doc/mesh-api.txt
 
 Supported features include:
 
-- **Application framework**: High-level API for creating mesh applications,
-  elements, and models
-- **D-Bus integration**: Async communication with bluetooth-meshd via dbus-next
-- **Model support**: Config Client, and extensible model base classes
-- **Provisioning**: Provisioner and Provision Agent interfaces
-- **CLI tool**: ``meshcli`` command-line interface for mesh operations
-- **Plugin system**: Extensible architecture using pluggy hooks
+- **Application framework**: high-level API for creating mesh applications, elements, and models
+- **D-Bus integration**: async communication with ``bluetooth-meshd`` via ``dbus-next``
+- **Model support**: configuration, generic, light, sensor, scene, time, and Silvair-specific models
+- **Provisioning**: provisioner and provision agent interfaces
 
 Installation
 ------------
+
+This project requires Python 3.14.
 
 You can install "bluetooth-mesh-bluez" via `pip`_ from `PyPI`_::
 
     $ pip install bluetooth-mesh-bluez
 
-For CLI tool support::
+You can also add it to a Poetry-managed project::
 
-    $ pip install bluetooth-mesh-bluez[cli]
+    $ poetry add bluetooth-mesh-bluez
+
+If you want to work on this repository locally, install the project and development dependencies
+with Poetry::
+
+    $ poetry install
 
 Contributing
 ------------
