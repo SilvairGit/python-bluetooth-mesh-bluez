@@ -267,9 +267,7 @@ async def test_bulk_query(model, status_parsed, destination, app_index, element_
 
 
 @pytest.mark.asyncio
-async def test_bulk_query_timeout(
-    model, status_parsed, _destination, app_index, _element_path, _node_interface
-):
+async def test_bulk_query_timeout(model, status_parsed, destination, app_index, element_path, node_interface):
     async def request(dest):
         await model.send_app(
             dest,
