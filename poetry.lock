@@ -195,14 +195,14 @@ uvloop = ["uvloop (>=0.15.2) ; sys_platform != \"win32\"", "winloop (>=0.5.0) ; 
 
 [[package]]
 name = "bluetooth-mesh-messages"
-version = "1.0.0"
+version = "1.0.1"
 description = ""
 optional = false
 python-versions = "<3.15,>=3.14"
 groups = ["main"]
 files = [
-    {file = "bluetooth_mesh_messages-1.0.0-py3-none-any.whl", hash = "sha256:623b97743743eb4d39325ea3690814c7b2400d84b4843f5263c00eb2287dbbc0"},
-    {file = "bluetooth_mesh_messages-1.0.0.tar.gz", hash = "sha256:073aa2785e90d18a711a0e05488430dfbf6c88544b256c9e65a9c512076bdc10"},
+    {file = "bluetooth_mesh_messages-1.0.1-py3-none-any.whl", hash = "sha256:c858d25d06437e34bea4640ae4b882c05e18c1c6a537c929ad1b80586cde85d8"},
+    {file = "bluetooth_mesh_messages-1.0.1.tar.gz", hash = "sha256:174f22b3e807f3d009d91c1fb9f7f6417565ad28eaa19bc26aada370406b52a9"},
 ]
 
 [package.dependencies]
@@ -213,23 +213,23 @@ capnp = ["pycapnp"]
 
 [[package]]
 name = "bluetooth-mesh-network"
-version = "1.0.0"
+version = "1.0.1"
 description = ""
 optional = false
 python-versions = "<3.15,>=3.14"
 groups = ["main"]
 files = [
-    {file = "bluetooth_mesh_network-1.0.0-py3-none-any.whl", hash = "sha256:f6d5b03337794a1fefc77d26eb9f2ec6665a648ee9417b14f6babc6052a4f769"},
-    {file = "bluetooth_mesh_network-1.0.0.tar.gz", hash = "sha256:b34383aa237394e2e093e336d5a4227645e423eada1676ccdc7ddab3f8beebc5"},
+    {file = "bluetooth_mesh_network-1.0.1-py3-none-any.whl", hash = "sha256:9f94a8cb4d5d37859e26cabda0c0fb9e8f836962ca94c90d8c6ef65f322e8367"},
+    {file = "bluetooth_mesh_network-1.0.1.tar.gz", hash = "sha256:57a5d1adccd958058b5a3a5b433b492ab48ef62fc87d7b5c471fd2b92cda8894"},
 ]
 
 [package.dependencies]
-bitstring = ">=4.4.0,<4.5"
-bluetooth-mesh-messages = ">=1.0.0,<1.1"
-construct = ">=2.10.70,<2.11"
-crc = ">=7.1.0,<7.2"
-cryptography = ">=46.0.5,<46.1"
-ecdsa = ">=0.19.1,<0.20"
+bitstring = ">=4.4.0"
+bluetooth-mesh-messages = ">=1.0.1,<2"
+construct = ">=2.10.70"
+crc = ">=7.1.0"
+cryptography = ">=46.0.5"
+ecdsa = ">=0.19.1"
 
 [[package]]
 name = "cffi"
@@ -851,4 +851,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.14,<3.15"
-content-hash = "238560553aed39fdaa0f7bc0dd52fd611f3bf108aee4ef11606d87447fb5e527"
+content-hash = "9bb01d8127d153a4294fd89eae30ee8c8d9aac7540d6a88b32a4a584f3c47140"
