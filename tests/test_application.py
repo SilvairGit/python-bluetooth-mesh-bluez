@@ -207,13 +207,13 @@ def fixture_application(event_loop):
     return MockApplication(event_loop)
 
 
-async def test_attach_bad_token(application, _dbus, node):
+async def test_attach_bad_token(application, dbus, node):
     async with application:
         with pytest.raises(dbus_next.errors.DBusError, match="Invalid token"):
             await application.attach(node.token + 1)
 
 
-async def test_attach_good_token(application, _dbus, node):
+async def test_attach_good_token(application, dbus, node):
     async with application:
         await application.attach(node.token)
         assert (
@@ -224,7 +224,7 @@ async def test_attach_good_token(application, _dbus, node):
 
 @pytest.mark.parametrize("node", [None])
 class TestImportOnConnect:
-    async def test_import(self, application, _dbus):
+    async def test_import(self, application, dbus, node):
         async with application:
             await application.connect()
 
@@ -234,7 +234,7 @@ class TestImportOnConnect:
             )
             assert application.address == 0x200
 
-    async def test_missing_address(self, application, _dbus):
+    async def test_missing_address(self, application, dbus, node):
         application.address = None
 
         async with application:
@@ -243,7 +243,7 @@ class TestImportOnConnect:
 
 
 class TestAttachOnConnect:
-    async def test_read_address_after_attach(self, application, _dbus, node):
+    async def test_read_address_after_attach(self, application, dbus, node):
         application.address = None
         application.token_ring.token = node.token
 
@@ -259,7 +259,7 @@ class TestAttachOnConnect:
             with pytest.raises(AttributeError, match="Can't set address"):
                 application.address = 5
 
-    async def test_import_new_on_attach_with_bad_token(self, application, _dbus, node):
+    async def test_import_new_on_attach_with_bad_token(self, application, dbus, node):
         application.token_ring.token = node.token + 1
 
         async with application:
@@ -271,7 +271,7 @@ class TestAttachOnConnect:
             )
             assert application.address == 0x200
 
-    async def test_import_existing_with_bad_token(self, application, _dbus, node):
+    async def test_import_existing_with_bad_token(self, application, dbus, node):
         application.token_ring.token = node.token + 1
         _, uuid = node.path.split("/node")
         application.uuid = UUID(uuid)
